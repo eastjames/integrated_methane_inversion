@@ -1,10 +1,10 @@
-startdate: "20180401T000000"
-enddate: "20230330T235959"
-imidir: "/n/home06/nbalasus/IMI_BCs/integrated_methane_inversion"
-workdir: "/n/holylfs05/LABS/jacob_lab/nbalasus/IMI_BCs"
-gccache: "/n/holylfs05/LABS/jacob_lab/nbalasus/IMI_BCs/runGCC1402/OutputDir"
-tropomi_cache: "/n/holylfs05/LABS/jacob_lab/imi/ch4/tropomi"
-CondaEnv: imi_env
+startdate: "20181215T000000"
+enddate: "20181231T235959"
+imidir: "/n/holylfs05/LABS/jacob_lab/jeast/integrated_methane_inversion"
+workdir: "/n/holylfs05/LABS/jacob_lab/jeast/proj/seasonality/runs/inputs/BC"
+gccache: "/n/holylfs05/LABS/jacob_lab/jeast/proj/seasonality/runs/spinup/OutputDir"
+tropomi_cache: "/n/holylfs05/LABS/jacob_lab/imi/ch4/blended"
+CondaEnv: imi_env2
 
-RunGEOSChem: true
+RunGEOSChem: false
 WriteBCs: true

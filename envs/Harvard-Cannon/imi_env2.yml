@@ -1,0 +1,21 @@
+name: imi_env2
+dependencies:
+  - python
+  - xarray
+  - pyyaml
+  - scikit-learn
+  - numpy
+  - pandas
+  - shapely
+  - joblib
+  - matplotlib
+  - colorcet
+  - cartopy
+  - netcdf4
+  - pyproj
+  - xesmf
+  - geopandas
+  - regionmask
+  - ipykernel
+  - jupyter
+  - bottleneck

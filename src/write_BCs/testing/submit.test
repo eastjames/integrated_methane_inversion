@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#SBATCH -c 1
+#SBATCH -N 1
+#SBATCH -t 0-00:05
+#SBATCH -p test,huce_intel,seas_compute
+#SBATCH -J write_BCs_spinup
+#SBATCH -o logs/test-%j.out
+
+#. ../../../envsource.gnu.sh
+module load python
+mamba activate imi_env2
+sbatch -p seas_compute,huce_intel,huce_cascade,test -t 0-00:05 -c 1 -o logs/slurm-%j.out --wrap "python test.py"

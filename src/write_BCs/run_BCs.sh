@@ -1,8 +1,22 @@
 #!/bin/bash
 
+#SBATCH -c 1
+#SBATCH -N 1
+#SBATCH -t 0-08:00
+#SBATCH -p test,huce_intel,seas_compute
+#SBATCH -J write_BCs_spinup
+#SBATCH -o logs/slurm0-%j.out
+
+module load python
+
+
+
 # Read in the config file
 source ../utilities/parse_yaml.sh
 eval $(parse_yaml config_write_BCs.yml)
+
+# activate env
+mamba activate $CondaEnv
 
 # Make directories if they don't exists (and throw an error if they are not empty so we don't accidentally overwrite anything)
 function create_and_check_dirs() {
@@ -71,10 +85,10 @@ if "$WriteBCs"; then
     
     # Run python scripts
     cd ${imidir}/src/write_BCs
-    #sbatch -W -p ${Partition} -t 2-00:00 --mem 184000 -c 48 --wrap "source ~/.bashrc; conda activate $CondaEnv; python write_tropomi_GC_daily_avgs.py"; wait;
-    sbatch -W -p ${Partition} -t 0-02:00 --mem 184000 -c 1 --wrap "source ~/.bashrc; conda activate $CondaEnv; python write_tropomi_GC_daily_avgs.py"; wait;
-    #sbatch -W -p ${Partition} -t 2-00:00 --mem 64000 --wrap "source ~/.bashrc; conda activate $CondaEnv; python calculate_bias.py"; wait;
-    #sbatch -W -p ${Partition} -t 2-00:00 --mem 64000 --wrap "source ~/.bashrc; conda activate $CondaEnv; python write_boundary.py"; wait;
+    sbatch -W -p ${Partition} -t 2-00:00 --mem 184000 -c 48 -o logs/slurm1-%j.out --wrap "python write_tropomi_GC_daily_avgs.py"; wait;
+    #sbatch -p ${Partition} -t 0-02:00 --mem 64000 -c 1 -o logs/slurm-%j.out --wrap "source ~/.bashrc; conda activate $CondaEnv; python write_tropomi_GC_daily_avgs.py"
+    sbatch -W -p ${Partition} -t 2-00:00 --mem 64000 -o logs/slurm2-%j.out --wrap "python calculate_bias.py"; wait;
+    sbatch -W -p ${Partition} -t 2-00:00 --mem 64000 -o logs/slurm3-%j.out --wrap "python write_boundary.py"; wait;
 
     # Replace the days we don't have TROPOMI data with initial GC outputs
     #cp ${workdir}/runGCC1402/OutputDir/GEOSChem.BoundaryConditions.201804{01..29}_0000z.nc4 ${workdir}/smoothed-boundary-conditions

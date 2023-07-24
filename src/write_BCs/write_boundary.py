@@ -20,7 +20,8 @@ if __name__ == "__main__":
         strdate = file1["time"].values
 
     # Only write BCs for our date range (otherwise, files would be written for the last few days, which are invalid due to a lack of TROPOMI data on the +15 day end)
-    os.chdir(os.path.join(config["workdir"], "runGCC1402", "OutputDir"))
+    #os.chdir(os.path.join(config["workdir"], "runGCC1402", "OutputDir"))
+    os.chdir(os.path.join(config["gc_cache"]))
     files = sorted(glob.glob("GEOSChem.BoundaryConditions*.nc4"))
     files = [
         f

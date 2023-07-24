@@ -1,0 +1,15 @@
+#!/bin/bash
+
+#SBATCH -c 1
+#SBATCH -N 1
+#SBATCH -t 0-08:00:00
+#SBATCH -p test,huce_intel,seas_compute
+#SBATCH --mem 4000
+#SBATCH -J write_BCs_spinup
+#SBATCH -o logs/slurm-%j.out
+#SBATCH --mail-type=END
+
+. ../../../envsource.gnu.sh
+module load python
+conda activate imi_env2
+./run_BCs.sh

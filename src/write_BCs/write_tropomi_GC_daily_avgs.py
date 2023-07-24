@@ -49,7 +49,8 @@ def apply_tropomi_operator_to_one_tropomi_file(filename):
         gc_enddate = end_time_of_interest,
         xlim = [-180, 180],
         ylim = [-90, 90],
-        gc_cache = os.path.join(config["workdir"], "runGCC1402", "OutputDir"),
+        #gc_cache = os.path.join(config["workdir"], "runGCC1402", "OutputDir"),
+        gc_cache = os.path.join(config["gc_cache"]),
         build_jacobian = False, # Not relevant
         sensi_cache = False) # Not relevant
     
@@ -76,7 +77,9 @@ if __name__ == "__main__":
     Parallel(n_jobs=-1)(delayed(apply_tropomi_operator_to_one_tropomi_file)(filename) for filename in TROPOMI_files)
 
     # Read any of the GEOS-Chem files to get the lat/lon grid
-    with xr.open_dataset(glob.glob(os.path.join(config["workdir"], "runGCC1402", "OutputDir", "GEOSChem.SpeciesConc*.nc4"))[0]) as data:
+    with xr.open_dataset(
+        glob.glob(os.path.join(config["gc_cache"], "GEOSChem.SpeciesConc*.nc4"))[0]
+    ) as data:
         LON = data["lon"].values
         LAT = data["lat"].values
         

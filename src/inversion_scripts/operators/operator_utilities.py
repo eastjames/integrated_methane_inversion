@@ -23,24 +23,42 @@ def read_geoschem(date, gc_cache, build_jacobian=False, sensi_cache=None):
     """
 
     # Assemble file paths to GEOS-Chem output collections for input data
-    file_species = f"GEOSChem.SpeciesConc.{date}00z.nc4"
-    file_pedge = f"GEOSChem.LevelEdgeDiags.{date}00z.nc4"
+
+    # date = '20120601_00'
+    # enable use of monthly files with hourly timestep
+    date2 = pd.to_datetime(date, format = '%Y%m%d_%H')
+    datenew = date2.strftime('%Y%m01_00')
+    datenew2 = pd.to_datetime(datenew,format='%Y%m%d_%H')
+    tidx = int((date2 - datenew2).total_seconds()/(60*60))
+
+    file_species = f"GEOSChem.SpeciesConc.{datenew}00z.nc4"
+    #file_pedge = f"GEOSChem.LevelEdgeDiags.{date}00z.nc4"
+    file_pedge = f"GEOSChem.StateMet.{datenew}00z.nc4"
 
     # Read lat, lon, CH4 from the SpeciecConc collection
     filename = f"{gc_cache}/{file_species}"
     gc_data = xr.open_dataset(filename)
     LON = gc_data["lon"].values
     LAT = gc_data["lat"].values
-    CH4 = gc_data["SpeciesConcVV_CH4"].values[0, :, :, :]
+    CH4 = gc_data["SpeciesConcVV_CH4"].values[tidx, :, :, :]
     CH4 = CH4 * 1e9  # Convert to ppb
     CH4 = np.einsum("lij->jil", CH4)
+    Ap = gc_data['hyai'].values
+    Bp = gc_data['hybi'].values
     gc_data.close()
 
     # Read PEDGE from the LevelEdgeDiags collection
     filename = f"{gc_cache}/{file_pedge}"
     gc_data = xr.open_dataset(filename)
-    PEDGE = gc_data["Met_PEDGE"].values[0, :, :, :]
-    PEDGE = np.einsum("lij->jil", PEDGE)
+    #PEDGE = gc_data["Met_PEDGE"].values[0, :, :, :]
+    #PEDGE = np.einsum("lij->jil", PEDGE)
+
+    # create pressure edges
+    psfc_var = 'Met_PSC2WET'
+    psfc = gc_data[psfc_var].values[tidx,:,:] # no lev dim
+    psfc = np.einsum('ij->ji', psfc) 
+    PEDGE = Ap[None,None,:] + (Bp[None,None,:] * psfc[:,:,None]) # pedge = a + (b * ps)
+
     gc_data.close()
 
     # Store GEOS-Chem data in dictionary

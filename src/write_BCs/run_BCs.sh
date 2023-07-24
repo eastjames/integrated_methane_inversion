@@ -79,15 +79,15 @@ fi
 
 if "$WriteBCs"; then
 
-    # Make sure dirs are empty so we don't accidentally overwrite them
-    dirs=("${workdir}/step1" "${workdir}/step2" "${workdir}/step3" "${workdir}/smoothed-boundary-conditions")
-    create_and_check_dirs "${dirs[@]}"
+    ## Make sure dirs are empty so we don't accidentally overwrite them
+    #dirs=("${workdir}/step1" "${workdir}/step2" "${workdir}/step3" "${workdir}/smoothed-boundary-conditions")
+    #create_and_check_dirs "${dirs[@]}"
     
     # Run python scripts
     cd ${imidir}/src/write_BCs
-    sbatch -W -p ${Partition} -t 2-00:00 --mem 184000 -c 48 -o logs/slurm1-%j.out --wrap "python write_tropomi_GC_daily_avgs.py"; wait;
-    #sbatch -p ${Partition} -t 0-02:00 --mem 64000 -c 1 -o logs/slurm-%j.out --wrap "source ~/.bashrc; conda activate $CondaEnv; python write_tropomi_GC_daily_avgs.py"
-    sbatch -W -p ${Partition} -t 2-00:00 --mem 64000 -o logs/slurm2-%j.out --wrap "python calculate_bias.py"; wait;
+    #sbatch -W -p ${Partition} -t 2-00:00 --mem 184000 -c 48 -o logs/slurm1-%j.out --wrap "python write_tropomi_GC_daily_avgs.py"; wait;
+    ##sbatch -p ${Partition} -t 0-02:00 --mem 64000 -c 1 -o logs/slurm-%j.out --wrap "source ~/.bashrc; conda activate $CondaEnv; python write_tropomi_GC_daily_avgs.py"
+    #sbatch -W -p ${Partition} -t 2-00:00 --mem 64000 -o logs/slurm2-%j.out --wrap "python calculate_bias.py"; wait;
     sbatch -W -p ${Partition} -t 2-00:00 --mem 64000 -o logs/slurm3-%j.out --wrap "python write_boundary.py"; wait;
 
     # Replace the days we don't have TROPOMI data with initial GC outputs

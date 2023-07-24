@@ -21,16 +21,19 @@ if __name__ == "__main__":
 
     # Only write BCs for our date range (otherwise, files would be written for the last few days, which are invalid due to a lack of TROPOMI data on the +15 day end)
     #os.chdir(os.path.join(config["workdir"], "runGCC1402", "OutputDir"))
-    os.chdir(os.path.join(config["gc_cache"]))
-    files = sorted(glob.glob("GEOSChem.BoundaryConditions*.nc4"))
+    os.chdir(os.path.join(config["gc_cache_rst"]))
+    #files = sorted(glob.glob("GEOSChem.BoundaryConditions*.nc4"))
+    files = sorted(glob.glob("GEOSChem.Restart*.nc4"))
     files = [
         f
         for f in files
         if (
-            (np.datetime64(f[28:36]) >= np.datetime64(config["startdate"]))
-            & (np.datetime64(f[28:36]) <= np.datetime64(config["enddate"]))
+            (np.datetime64( re.split('\.|_',f)[2] ) >= np.datetime64(config["startdate"]))
+            & (np.datetime64( re.split('\.|_',f)[2] ) <= np.datetime64(config["enddate"]))
         )
     ]
+    if len(files) < 1:
+        print('No Restart files to adjust!', flush = True)
 
     # For each file, remove the bias calculated in calculate_bias.py from each level of the GEOS-Chem boundary conditions
     for filename in files:
@@ -44,11 +47,13 @@ if __name__ == "__main__":
         Bias = all_Bias[ind, :, :]
 
         with xr.open_dataset(filename) as file2:
-            orig_data = file2["SpeciesBC_CH4"].values.copy()
-            for t in range(orig_data.shape[0]):
-                for lev in range(47):
-                    orig_data[t, lev, :, :] = orig_data[t, lev, :, :] - Bias
-            file2["SpeciesBC_CH4"].values = orig_data
+            orig_data = file2["SpeciesRst_CH4"].values.copy()
+            #for t in range(orig_data.shape[0]):
+            #    for lev in range(47):
+            #        orig_data[t, lev, :, :] = orig_data[t, lev, :, :] - Bias
+            orig_data[:, :, :, :] = orig_data[:, :, :, :] - Bias
+            #file2["SpeciesBC_CH4"].values = orig_data
+            file2["SpeciesRst_CH4"].values = orig_data
             file2.to_netcdf(
                 f"{outputDir}/{filename}",
                 encoding={v: {"zlib": True, "complevel": 9} for v in file2.data_vars},

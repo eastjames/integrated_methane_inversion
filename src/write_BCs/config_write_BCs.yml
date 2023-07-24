@@ -1,15 +1,16 @@
 ## Day range (inclusive) that you want to generate BCs for
 ## You should have TROPOMI data and met fields for 16 days past the specified enddate
-startdate: "20181215"
+startdate: "20181230"
 enddate: "20190102"
 
 ## Where the IMI code to write this is (parent dir of this file)
 imidir: "/n/holylfs05/LABS/jacob_lab/jeast/integrated_methane_inversion"
 
-gc_cache: "/n/holylfs05/LABS/jacob_lab/jeast/proj/seasonality/runs/spinup/OutputDir"
+gc_cache: '/n/jacob_lab/Users/tmooring/GCClassic-correcttropopause_archdirs/gc_2x25_merra2_CH4_ct_CLSBCr_prod1/OutputDir'
+gc_cache_rst: '/n/jacob_lab/Users/tmooring/GCClassic-correcttropopause_archdirs/gc_2x25_merra2_CH4_ct_CLSBCr_prod1/Restarts'
 
 ## A directory with a lot of space where you can write the BCs (and intermediate files)
-workdir: "/n/holylfs05/LABS/jacob_lab/jeast/proj/seasonality/runs/inputs/BC"
+workdir: "/n/holylfs05/LABS/jacob_lab/jeast/proj/seasonality/runs/inputs/BC-correcttp"
 
 ## Whether to use Blended data and location of the TROPOMI data
 BlendedTROPOMI: true
@@ -21,7 +22,8 @@ GEOSChemEnv: /n/home06/nbalasus/envs/gcclassic.rocky+gnu12.minimal.env
 Partition: huce_cascade,huce_intel,seas_compute
 
 ## A directory with a restart file for GEOS-Chem for your given start date
-RestartDir: "/n/holylfs05/LABS/jacob_lab/imi/ch4/tropomi-boundary-conditions/v2023-06/restarts"
+#RestartDir: "/n/holylfs05/LABS/jacob_lab/imi/ch4/tropomi-boundary-conditions/v2023-06/restarts"
+RestartDir: None
 
 ## Which of the modules to run
 RunGEOSChem: false

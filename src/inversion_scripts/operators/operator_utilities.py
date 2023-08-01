@@ -27,9 +27,10 @@ def read_geoschem(date, gc_cache, build_jacobian=False, sensi_cache=None):
     # date = '20120601_00'
     # enable use of monthly files with hourly timestep
     date2 = pd.to_datetime(date, format = '%Y%m%d_%H')
-    datenew = date2.strftime('%Y%m01_00')
-    datenew2 = pd.to_datetime(datenew,format='%Y%m%d_%H')
-    tidx = int((date2 - datenew2).total_seconds()/(60*60))
+    datenew = date2.strftime('%Y%m%d_00')
+    #datenew2 = pd.to_datetime(datenew,format='%Y%m%d_%H')
+    #tidx = int((date2 - datenew2).total_seconds()/(60*60))
+    tidx = date2.hour
 
     file_species = f"GEOSChem.SpeciesConc.{datenew}00z.nc4"
     #file_pedge = f"GEOSChem.LevelEdgeDiags.{date}00z.nc4"

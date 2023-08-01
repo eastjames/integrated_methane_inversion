@@ -74,6 +74,10 @@ if __name__ == "__main__":
         TROPOMI_CH4 = daily_CH4["CH4"]
         date = daily_CH4["date"]
 
+    # filter out data south of -60deg lat JDE
+    GC_CH4 = GC_CH4.where(lambda x: x.lat > -60)
+    TROPOMI_CH4 = TROPOMI_CH4.where(lambda x: x.lat > -60)
+
     # smooth the background GC and TROPOMI data
     GC_bkgd = smooth_3D_da(GC_CH4)
     TROPOMI_bkgd = smooth_3D_da(TROPOMI_CH4)

@@ -4,13 +4,13 @@ startdate: "20181215"
 enddate: "20190102"
 
 ## Where the IMI code to write this is (parent dir of this file)
-imidir: "/n/holylfs05/LABS/jacob_lab/jeast/integrated_methane_inversion"
+imidir: "/n/holyscratch01/jacob_lab/jeast/proj/globalic/integrated_methane_inversion"
 
-gc_cache: '/n/jacob_lab/Users/tmooring/GCClassic-correcttropopause_archdirs/gc_2x25_merra2_CH4_ct_CLSBCr_prod1/OutputDir'
-gc_cache_rst: '/n/jacob_lab/Users/tmooring/GCClassic-correcttropopause_archdirs/gc_2x25_merra2_CH4_ct_CLSBCr_prod1/Restarts'
+gc_cache: '/n/holyscratch01/jacob_lab/jeast/proj/globalic/runs/R3-spinup/OutputDir'
+gc_cache_rst: '/n/holyscratch01/jacob_lab/jeast/proj/globalic/runs/R3-spinup/Restarts'
 
 ## A directory with a lot of space where you can write the BCs (and intermediate files)
-workdir: "/n/holylfs05/LABS/jacob_lab/jeast/proj/seasonality/runs/inputs/BC-correcttp2"
+workdir: "/n/holyscratch01/jacob_lab/jeast/proj/globalic/runs/inputs/restarts/R5"
 
 ## Whether to use Blended data and location of the TROPOMI data
 BlendedTROPOMI: true

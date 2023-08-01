@@ -9,8 +9,6 @@
 
 module load python
 
-
-
 # Read in the config file
 source ../utilities/parse_yaml.sh
 eval $(parse_yaml config_write_BCs.yml)

@@ -86,67 +86,84 @@ def make_state_vector_file(
     hd = xr.load_dataset(hemco_diag_pth)
 
     # Require hemco diags on same global grid as land cover map
-    hd["lon"] = hd["lon"] - 0.03125  # initially offset by 0.03125 degrees
-
-    # Select / group fields together
-    lc = (lc["FRLAKE"] + lc["FRLAND"] + lc["FRLANDIC"]).drop("time").squeeze()
-    hd = (hd["EmisCH4_Oil"] + hd["EmisCH4_Gas"]).drop("time").squeeze()
-
-    # Check compatibility of region of interest
-    if is_regional:
-       compatible = check_grid_compatibility(
-           lat_min, lat_max, lon_min, lon_max, land_cover_pth
-       )
-       if not compatible:
-           raise ValueError(
-               "Region of interest not contained within selected RegionID; see config.yml)."
-           )
-
-    # For global inversions exclude Antarctica and limit max_lat to avoid
+    if np.abs(lc.lon.values - hd.lon.values).max() != 0: #JDE add a check
+        hd["lon"] = hd["lon"] - 0.03125  # initially offset by 0.03125 degrees
+        
+    # Global inversions
+    # exclude Antarctica and limit max_lat to avoid
     # HEMCO error when reading netCDF file
     if not is_regional:
-        lat_max = 88.0
-        lat_min = -60.0
+        lat_max = min(88.0, lat_max)
+        lat_min = max(-60.0, lat_min)
+        
+        # keep criteria
+        keep_cells = (
+            (lc['FRLAND'].squeeze().drop('time') > land_threshold) &  # more than 25% land
+            (lc['FRLANDIC'].squeeze().drop('time') < 0.1)   # less than 10% ice
+        )
+        
+        # nan where there is state vector element, filled in below
+        # 0 where there is not state vector element
+        statevector = xr.where(keep_cells, np.nan, 0)
+    
+    
+    # Select / group fields together
+    if is_regional:
+        
+        # Define bounds of inversion domain
+        (
+            minLat_allowed,
+            maxLat_allowed,
+            minLon_allowed,
+            maxLon_allowed,
+        ) = get_grid_bounds(land_cover_pth)
+        lon_min_inv_domain = np.max([lon_min - buffer_deg, minLon_allowed])
+        lon_max_inv_domain = np.min([lon_max + buffer_deg, maxLon_allowed])
+        lat_min_inv_domain = np.max([lat_min - buffer_deg, minLat_allowed])
+        lat_max_inv_domain = np.min([lat_max + buffer_deg, maxLat_allowed])
+    
+        # Subset inversion domain for land cover and hemco diagnostics fields
+        lc = lc.isel(lon=lc.lon >= lon_min_inv_domain, lat=lc.lat >= lat_min_inv_domain)
+        lc = lc.isel(lon=lc.lon <= lon_max_inv_domain, lat=lc.lat <= lat_max_inv_domain)
+        hd = hd.isel(lon=hd.lon >= lon_min_inv_domain, lat=hd.lat >= lat_min_inv_domain)
+        hd = hd.isel(lon=hd.lon <= lon_max_inv_domain, lat=hd.lat <= lat_max_inv_domain)
 
-    # Define bounds of inversion domain
-    (
-        minLat_allowed,
-        maxLat_allowed,
-        minLon_allowed,
-        maxLon_allowed,
-    ) = get_grid_bounds(land_cover_pth)
-    lon_min_inv_domain = np.max([lon_min - buffer_deg, minLon_allowed])
-    lon_max_inv_domain = np.min([lon_max + buffer_deg, maxLon_allowed])
-    lat_min_inv_domain = np.max([lat_min - buffer_deg, minLat_allowed])
-    lat_max_inv_domain = np.min([lat_max + buffer_deg, maxLat_allowed])
+        lc = (lc["FRLAKE"] + lc["FRLAND"] + lc["FRLANDIC"]).drop("time").squeeze()
+        hd = (hd["EmisCH4_Oil"] + hd["EmisCH4_Gas"]).drop("time").squeeze()
 
-    # Subset inversion domain for land cover and hemco diagnostics fields
-    lc = lc.isel(lon=lc.lon >= lon_min_inv_domain, lat=lc.lat >= lat_min_inv_domain)
-    lc = lc.isel(lon=lc.lon <= lon_max_inv_domain, lat=lc.lat <= lat_max_inv_domain)
-    hd = hd.isel(lon=hd.lon >= lon_min_inv_domain, lat=hd.lat >= lat_min_inv_domain)
-    hd = hd.isel(lon=hd.lon <= lon_max_inv_domain, lat=hd.lat <= lat_max_inv_domain)
+        # Check compatibility of region of interest
+        compatible = check_grid_compatibility(
+            lat_min, lat_max, lon_min, lon_max, land_cover_pth
+        )
+        if not compatible:
+            raise ValueError(
+                "Region of interest not contained within selected RegionID; see config.yml)."
+            )
 
-    # Initialize state vector from land cover, replacing all values with NaN (to be filled later)
-    statevector = lc.where(lc == -9999.0)
-
-    # Set pixels in buffer areas to 0
-    statevector[:, (statevector.lon < lon_min) | (statevector.lon > lon_max)] = 0
-    statevector[(statevector.lat < lat_min) | (statevector.lat > lat_max), :] = 0
-
-    # Also set pixels over water to 0, unless there are offshore emissions
-    if land_threshold:
-        # Where there is neither land nor emissions, replace with 0
-        land = lc.where((lc > land_threshold) | (hd > emis_threshold))
-        statevector.values[land.isnull().values] = -9999
-
+        # Initialize state vector from land cover, replacing all values with NaN (to be filled later)
+        #statevector = lc.where(lc == -9999.0)
+        statevector = lc.copy(deep = True)
+        statevector[:] = np.nan
+    
+        # Set pixels in buffer areas to 0
+        statevector[:, (statevector.lon < lon_min) | (statevector.lon > lon_max)] = 0
+        statevector[(statevector.lat < lat_min) | (statevector.lat > lat_max), :] = 0
+    
+        # Also set pixels over water to 0, unless there are offshore emissions
+        #if land_threshold:
+        if land_threshold > 0: #JDE change
+            land = lc.where((lc > land_threshold) | (hd > emis_threshold))
+            statevector.values[land.isnull().values] = 0
+    
     # Fill in the remaining NaNs with state vector element values
     statevector.values[statevector.isnull().values] = np.arange(
         1, statevector.isnull().sum() + 1
     )[::-1]
-
+    
     # Assign buffer pixels (the remaining 0's) to state vector
     # -------------------------------------------------------------------------
     if is_regional:
+    
         buffer_area = statevector.values == 0
 
         # Get image coordinates of all pixels in buffer area

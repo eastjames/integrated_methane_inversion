@@ -3,6 +3,13 @@
 #SBATCH -N 1
 #SBATCH -n 1
 #SBATCH -o "imi_output.log"
+#SBATCH --mem 16000
+#SBATCH -c 8
+#SBATCH -t 0-6:00
+#SBATCH -p seas_compute
+#SBATCH -J run_imi
+
+module load python
 
 # This script will run the Integrated Methane Inversion (IMI) with GEOS-Chem.
 # For documentation, see https://imi.readthedocs.io.
@@ -63,6 +70,8 @@ if ! "$isAWS"; then
     fi
 
 fi
+
+echo JDE HERE 1
 
 # Check all necessary config variables are present
 python src/utilities/sanitize_input_yaml.py $ConfigFile || imi_failed

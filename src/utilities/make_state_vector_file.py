@@ -78,6 +78,7 @@ def make_state_vector_file(
     is_regional=config["isRegional"]
     buffer_deg = config["BufferDeg"]
     land_threshold = config["LandThreshold"]
+    ice_threshold = config["IceThreshold"]
     emis_threshold = config["OffshoreEmisThreshold"]
     k_buffer_clust = config["nBufferClusters"]
 
@@ -99,7 +100,7 @@ def make_state_vector_file(
         # keep criteria
         keep_cells = (
             (lc['FRLAND'].squeeze().drop('time') > land_threshold) &  # more than 25% land
-            (lc['FRLANDIC'].squeeze().drop('time') < 0.1)   # less than 10% ice
+            (lc['FRLANDIC'].squeeze().drop('time') < ice_threshold)   # less than 10% ice
         )
         
         # nan where there is state vector element, filled in below

@@ -124,11 +124,19 @@ setup_imi() {
     # Define path to GEOS-Chem run directory files
     cd "${InversionPath}"
     if [ ! -d "GCClassic" ]; then
-        git clone https://github.com/geoschem/GCClassic.git
-        cd GCClassic
-        git checkout dac5a54 # most recent dev/14.2.1 @ 1 Sep 2023 12:44 PM (update this once 14.2.1 officially released)
-        git submodule update --init --recursive
-        cd ..
+        echo 'jde 2'
+        if "$CustomGC"; then
+            echo 'jde 3'
+            source  ../prep/for_james/modify_geos_chem_fxn.sh
+            echo 'jde 4'
+            get_gc_with_tropomi_operator # from for_james/modify_geos_chem_fxn.sh
+        else
+            git clone https://github.com/geoschem/GCClassic.git
+            cd GCClassic
+            git checkout dac5a54 # most recent dev/14.2.1 @ 1 Sep 2023 12:44 PM (update this once 14.2.1 officially released)
+            git submodule update --init --recursive
+            cd ..
+        fi
     else
         echo "Warning: GCClassic already exists so it won't be cloned."
         echo "Make sure your version is 14.2.1!"

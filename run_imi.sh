@@ -49,13 +49,9 @@ else
     ConfigFile=config.yml
 fi
 
-echo $isAWS JDE
-
 # Get configuration
 source src/utilities/parse_yaml.sh
 eval $(parse_yaml ${ConfigFile})
-
-echo $isAWS JDE
 
 if ! "$isAWS"; then
     # Activate Conda environment

@@ -122,7 +122,7 @@ setup_jacobian() {
 	# Only save out hourly pressure fields to daily files for base run
 	if [ $x -eq 0 ]; then
 	    if "$HourlyCH4"; then
-            sed -i -e "s|#'Restart'|'Restart'|g"
+            sed -i -e "s|#'Restart'|'Restart'|g" HISTORY.rc
             sed -i -e 's/#'\''LevelEdgeDiags/'\''LevelEdgeDiags/g' \
                    -e 's/LevelEdgeDiags.frequency:   00000100 000000/LevelEdgeDiags.frequency:   00000000 010000/g' \
                    -e 's/LevelEdgeDiags.duration:    00000100 000000/LevelEdgeDiags.duration:    00000001 000000/g' \
@@ -132,7 +132,7 @@ setup_jacobian() {
     else
         if "$HourlyCH4"; then
             #sed -i -e 's/'\''Restart/#'\''Restart/g' HISTORY.rc
-            sed -i -e "s|#'Restart'|'Restart'|g"
+            sed -i -e "s|#'Restart'|'Restart'|g" HISTORY.rc
         fi
 	fi
 
@@ -178,7 +178,7 @@ run_jacobian() {
 
         if ! "$isAWS"; then
             # Load environment with modules for compiling GEOS-Chem Classic
-            source ${GEOSChemEnv} 
+            source ${${InversionPath}}/${GEOSChemEnv} 
         fi
 
         # Submit job to job scheduler

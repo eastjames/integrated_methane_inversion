@@ -70,9 +70,33 @@ setup_template() {
         sed -i -e "s:-180.0, 180.0:${Lons}:g" \
                -e "s:-90.0, 90.0:${Lats}:g" geoschem_config.yml
     fi
+    
+    # Modify config and link obs directory for TROPOMI online operator
+    if "$CustomGC"; then
+        sed -i -e "s|TROPOMI: false|TROPOMI: true|g" geoschem_config.yml
+        ln -s ${SatObsDir} "SatelliteObservations"
+    fi
 
     # For CH4 inversions always turn analytical inversion on
     sed -i "/analytical_inversion/{N;s/activate: false/activate: true/}" geoschem_config.yml
+
+    # Custom HEMCO_Config.rc
+    if "$CustomHEMCOConfig"; then
+        echo 'WARNING: Using custom HEMCO_Config.rc file!'
+        mv HEMCO_Config.rc orig.HEMCO_Config.rc
+        cp ${CustomHEMCOConfigFile} HEMCO_Config.rc
+        
+        sed -i -e "s|/path/to/total/ch4/emissions Total_CH4_Emis 2018|${PrecomputedEmisDir}/HEMCO_sa_diagnostics.\$YYYY\$MM\$DD0000.nc EmisCH4_Total 2018-2023|g" \
+               -e "s|/path/to/soil/sink SOIL_ABSORPTION 2018|${PrecomputedEmisDir}/HEMCO_sa_diagnostics.\$YYYY\$MM\$DD0000.nc EmisCH4_SoilAbsorb 2018-2023|g" \
+               -e "s|GC_BCs                 :       true|GC_BCs                 :       false|g" HEMCO_Config.rc
+
+        # Modify HEMCO_Diagn.rc to archive summed emissions and soil sink
+        sed -i '23,85d' HEMCO_Diagn.rc
+        sed -i -e "s|EmisCH4_Total        CH4   -1   -1   -1   2   kg/m2/s  CH4_emissions_from_all_sectors|EmisCH4_Total CH4 0 1 -1 2 kg/m2/s CH4_emissions_from_all_sectors|g" \
+               -e "s|EmisCH4_Oil          CH4    0    1   -1   2   kg/m2/s  CH4_emissions_from_oil|EmisCH4_Soil CH4 0 2 -1 2 kg/m2/s CH4_soil_absorption|g" HEMCO_Diagn.rc
+
+
+    fi
 
     # Also turn on analytical inversion option in HEMCO_Config.rc
     OLD="--> AnalyticalInv          :       false"
@@ -125,6 +149,8 @@ setup_template() {
     # Modify HISTORY.rc
     sed -i -e "s:'CH4':#'CH4':g" \
            -e "s:'Metrics:#'Metrics:g" \
+           -e "s:'Restart:#'Restart:g" \
+           -e "s:'SpeciesConc:#'SpeciesConc:g" \
            -e "s:'StateMet:#'StateMet:g" HISTORY.rc
     
     # If turned on, save out hourly CH4 concentrations to daily files
@@ -148,8 +174,9 @@ setup_template() {
     make -j install >> build_geoschem.log 2>&1
     cd ..
     if [[ -f gcclassic ]]; then
-        rm -rf build
+        rm -rf build #jde
         mv build_info ../GEOSChem_build_info
+        #cp build_info ../GEOSChem_build_info
     else
         printf "\nGEOS-Chem build failed! \n\nSee ${RunTemplate}/build/build_geoschem.log for details\n"
         exit 999

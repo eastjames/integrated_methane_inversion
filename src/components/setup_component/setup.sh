@@ -22,7 +22,8 @@ setup_imi() {
     SpinupEnd=${StartDate}
 
     # Use global boundary condition files for initial conditions
-    UseBCsForRestart=true
+    # JDE moved to config
+    #UseBCsForRestart=true
 
     printf "\nActivating conda environment: ${CondaEnv}\n"
     eval "$(conda shell.bash hook)"
@@ -124,12 +125,10 @@ setup_imi() {
     # Define path to GEOS-Chem run directory files
     cd "${InversionPath}"
     if [ ! -d "GCClassic" ]; then
-        echo 'jde 2'
         if "$CustomGC"; then
-            echo 'jde 3'
-            source  ../prep/for_james/modify_geos_chem_fxn.sh
-            echo 'jde 4'
-            get_gc_with_tropomi_operator # from for_james/modify_geos_chem_fxn.sh
+            echo 'WARNING: Using custom GEOS-Chem source code!'
+            source ${CustomGCfunction}
+            get_gc_with_tropomi_operator # from gc_global_sensitivities/run-before/modify-geos-chem-fxn.sh 
         else
             git clone https://github.com/geoschem/GCClassic.git
             cd GCClassic

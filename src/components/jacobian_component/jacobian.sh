@@ -34,7 +34,8 @@ setup_jacobian() {
 	# Error check
 	if [ $MaxSimultaneousRuns -gt $nElements ]; then
 	    printf "\MaxSimultaneousRuns=${MaxSimultaneousRuns} is greater than the total runs=${nElements}. Please modify MaxSimultenaousRuns in config.yml" 
-            exit 9999
+	    printf "JDE: NOT exiting because of this error"
+            #exit 9999
 	fi
 	sed -i -e "s:{JOBS}:%${MaxSimultaneousRuns}:g" jacobian_runs/submit_jacobian_simulations_array.sh
     else
@@ -56,10 +57,14 @@ setup_jacobian() {
 
 	# Add zeros to string name
 	if [ $x -lt 10 ]; then
-	    xstr="000${x}"
+	    xstr="00000${x}"
 	elif [ $x -lt 100 ]; then
-	    xstr="00${x}"
+	    xstr="0000${x}"
 	elif [ $x -lt 1000 ]; then
+	    xstr="000${x}"
+	elif [ $x -lt 10000 ]; then
+	    xstr="00${x}"
+	elif [ $x -lt 100000 ]; then
 	    xstr="0${x}"
 	else
 	    xstr="${x}"
@@ -94,7 +99,7 @@ setup_jacobian() {
    
 	# Update settings in geoschem_config.yml except for the base run
     if [ $x -ne 0 ]; then
-	    sed -i -e "s|emission_perturbation: 1.0|emission_perturbation: ${PerturbValue}|g" \
+	    sed -i -e "s|emission_perturbation_factor: 1.0|emission_perturbation_factor: ${PerturbValue}|g" \
 	           -e "s|state_vector_element_number: 0|state_vector_element_number: ${xUSE}|g" geoschem_config.yml
     fi
 

@@ -52,6 +52,14 @@ setup_spinup() {
         sed -i -e "s|--> Emis_ScaleFactor       :       true|--> Emis_ScaleFactor       :       false|g" HEMCO_Config.rc
     fi
 
+    # for BCs
+    if "$UseBCsForSpinupRestart"; then
+        sed -i -e "s|SpeciesRst|SpeciesBC|g" HEMCO_Config.rc
+    fi
+
+    # make sure restart is turned on
+    sed -i -e "s|#'Restart|'Restart|g" HISTORY.rc
+
     # Turn on LevelEdgeDiags output
     if "$HourlyCH4"; then
         sed -i -e 's/#'\''LevelEdgeDiags/'\''LevelEdgeDiags/g' \

@@ -10,10 +10,14 @@ x=${SLURM_ARRAY_TASK_ID}
 
 ### Add zeros to the cluster Id
 if [ $x -lt 10 ]; then
-    xstr="000${x}"
+    xstr="00000${x}"
 elif [ $x -lt 100 ]; then
-    xstr="00${x}"
+    xstr="0000${x}"
 elif [ $x -lt 1000 ]; then
+    xstr="000${x}"
+elif [ $x -lt 10000 ]; then
+    xstr="00${x}"
+elif [ $x -lt 100000 ]; then
     xstr="0${x}"
 else
     xstr="${x}"

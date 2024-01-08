@@ -178,7 +178,7 @@ run_jacobian() {
 
         if ! "$isAWS"; then
             # Load environment with modules for compiling GEOS-Chem Classic
-            source ${${InversionPath}}/${GEOSChemEnv} 
+            source ${InversionPath}/${GEOSChemEnv} 
         fi
 
         # Submit job to job scheduler

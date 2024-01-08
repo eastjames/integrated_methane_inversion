@@ -6,8 +6,8 @@
 #SBATCH --mem 16000
 #SBATCH -c 32
 #SBATCH -t 0-6:00
-#SBATCH -p seas_compute
-#SBATCH -J 2run_imi
+#SBATCH -p sapphire
+#SBATCH -J t3_run_imi
 
 module load python
 
@@ -46,12 +46,16 @@ printf "\n=== PARSING CONFIG FILE (run_imi.sh) ===\n"
 if [[ $# == 1 ]] ; then
     ConfigFile=$1
 else
-    ConfigFile="config.yml"
+    ConfigFile=config.yml
 fi
+
+echo $isAWS JDE
 
 # Get configuration
 source src/utilities/parse_yaml.sh
 eval $(parse_yaml ${ConfigFile})
+
+echo $isAWS JDE
 
 if ! "$isAWS"; then
     # Activate Conda environment

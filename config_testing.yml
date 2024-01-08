@@ -10,7 +10,7 @@ S3Upload: false
 
 ## Period of interest
 StartDate: 20190101
-EndDate: 20190131
+EndDate: 20190201
 SpinupMonths: 1
 
 ## Use blended TROPOMI+GOSAT data (true)? Or use operational TROPOMI data (false)?
@@ -104,16 +104,16 @@ PrecomputedEmisDir: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/globalinv/hemc
 
 ## Setup modules
 ##   Turn on/off different steps in setting up the inversion 
-SetupTemplateRundir: false
-SetupSpinupRun: false
-SetupJacobianRuns: false
+SetupTemplateRundir: true
+SetupSpinupRun: true
+SetupJacobianRuns: true
 SetupInversion: false
 SetupPosteriorRun: false
 
 ## Run modules
 ##   Turn on/off different steps in performing the inversion
-RunSetup: false
-DoSpinup: false
+RunSetup: true
+DoSpinup: true
 DoJacobian: true
 DoInversion: false
 DoPosterior: false
@@ -129,7 +129,8 @@ SimulationMemory: 10000
 JacobianCPUs: 8
 JacobianMemory: 10000
 RequestedTime: "0-00:30"
-SchedulerPartition: "huce_cascade,seas_compute,huce_bigmem,shared"
+SchedulerPartition: "sapphire"
+#SchedulerPartition: "huce_cascade,seas_compute,huce_bigmem,shared"
 
 ## Max number of simultaneous Jacobian runs from the job array (-1: no limit)
 MaxSimultaneousRuns: 50

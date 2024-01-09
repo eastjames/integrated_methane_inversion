@@ -128,7 +128,7 @@ SimulationCPUs: 8
 SimulationMemory: 10000
 JacobianCPUs: 8
 JacobianMemory: 10000
-RequestedTime: "0-00:30"
+RequestedTime: "0-01:00"
 SchedulerPartition: "sapphire"
 #SchedulerPartition: "huce_cascade,seas_compute,huce_bigmem,shared"
 

@@ -64,8 +64,17 @@ setup_template() {
     fi
 
     # Modify geoschem_config.yml based on settings in config.yml
-    sed -i -e "s:20190101:${StartDate}:g" \
-           -e "s:20190201:${EndDate}:g" geoschem_config.yml
+    #sed -i -e "s:20190101:${StartDate}:g" \
+    #       -e "s:20190201:${EndDate}:g" geoschem_config.yml
+
+    OLD="start_date: \[20190101"
+    NEW="start_date: \[${StartDate}"
+    sed -i -e "s|${OLD}|${NEW}|g" geoschem_config.yml
+    
+    OLD="end_date: \[20190201"
+    NEW="end_date: \[${EndDate}"
+    sed -i -e "s|${OLD}|${NEW}|g" geoschem_config.yml
+
     if "$isRegional"; then
         sed -i -e "s:-180.0, 180.0:${Lons}:g" \
                -e "s:-90.0, 90.0:${Lats}:g" geoschem_config.yml

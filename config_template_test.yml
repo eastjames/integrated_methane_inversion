@@ -2,15 +2,15 @@
 ## Documentation @ https://imi.readthedocs.io/en/latest/getting-started/imi-config-file.html
 
 ## General
-RunName: "imi"
+RunName: my_run_name
 isAWS: false
 UseSlurm: true
 SafeMode: false
 S3Upload: false
 
 ## Period of interest
-StartDate: 20190101
-EndDate: 20190331
+StartDate: my_start_date
+EndDate: my_end_date
 SpinupMonths: 1
 
 ## Use blended TROPOMI+GOSAT data (true)? Or use operational TROPOMI data (false)?
@@ -47,7 +47,7 @@ UpdateFreqDays: 7
 NudgeFactor: 0.1
 
 ## State vector
-CreateAutomaticRectilinearStateVectorFile: true
+CreateAutomaticRectilinearStateVectorFile: false
 nBufferClusters: 0
 BufferDeg: 0
 LandThreshold: 0.01
@@ -68,7 +68,7 @@ ForcedNativeResolutionElements:
   - [31.5, -104]
 
 ## Custom state vector
-StateVectorFile: "/path/to/StateVector.nc"
+StateVectorFile: "base_proj_dir/prep/testing/StateVector_testing.nc"
 ShapeFile: "None"
 
 ## Inversion
@@ -86,22 +86,35 @@ Res: "2.0x2.5"
 
 ## Meteorology
 ##   Options are GEOSFP or MERRA2
-Met: "MERRA2"
-#Met: "GEOSFP"
+#Met: "MERRA2"
+Met: "GEOSFP"
+
+## GEOS-Chem modifications
+CustomGC: true
+CustomGCfunction: "base_proj_dir/prep/gc_global_sensitivities/run-before/modify-geos-chem-fxn.sh"
+GEOSChemTROPOMIModDir: "base_proj_dir/prep/gc_global_sensitivities/run-before"
+## for online TROPOMI operator
+#SatObsDir: "/n/holylfs05/LABS/jacob_lab/Users/nbalasus/for_james/satellite_observations"
+SatObsDir: "/n/home06/nbalasus/holylfs05/gc_global_sensitivities/hourly_blended_tropomi_gosat"
+## HEMCO_Config.rc
+CustomHEMCOConfig: true
+CustomHEMCOConfigFile: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/global_ch4_inv_2x25_monthly/prep/gc_global_sensitivities/run-before/HEMCO_Config.rc"
+PrecomputedEmisDir: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/globalinv/hemco/hemco_2x25_geosfp/OutputDir"
+
 
 ## Setup modules
 ##   Turn on/off different steps in setting up the inversion 
-SetupTemplateRundir: false
-SetupSpinupRun: false
-SetupJacobianRuns: false
+SetupTemplateRundir: true
+SetupSpinupRun: true
+SetupJacobianRuns: true
 SetupInversion: false
 SetupPosteriorRun: false
 
 ## Run modules
 ##   Turn on/off different steps in performing the inversion
 RunSetup: true
-DoSpinup: false
-DoJacobian: false
+DoSpinup: true
+DoJacobian: true
 DoInversion: false
 DoPosterior: false
 
@@ -111,12 +124,13 @@ DoPreview: false
 DOFSThreshold: 0
 
 ## Resource allocation settings for slurm jobs
-SimulationCPUs: 32
-SimulationMemory: 300000
-JacobianCPUs: 1
-JacobianMemory: 7000
-RequestedTime: "0-1:00"
-SchedulerPartition: "huce_cascade,seas_compute,huce_bigmem,shared"
+SimulationCPUs: 8
+SimulationMemory: 10000
+JacobianCPUs: 8
+JacobianMemory: 10000
+RequestedTime: "0-02:00"
+SchedulerPartition: my_partition
+#SchedulerPartition: "huce_cascade,seas_compute,huce_bigmem,shared"
 
 ## Max number of simultaneous Jacobian runs from the job array (-1: no limit)
 MaxSimultaneousRuns: 50
@@ -135,6 +149,7 @@ MaxSimultaneousRuns: 50
 ##--------------------------------------------------------------------
 ## Additional settings for GEOS-Chem simulations
 ##--------------------------------------------------------------------
+
 
 ## Jacobian settings
 ## Note PerturbValue is a relative scalefactor and 
@@ -169,7 +184,7 @@ AIRS: false
 
 ## Path for IMI runs and output
 #OutputPath: "/n/holyscratch01/jacob_lab/$USER"
-OutputPath: "/n/holyscratch01/jacob_lab/jeast/proj/globalinv"
+OutputPath: my_output_path
 
 ## Path to GEOS-Chem input data
 DataPath: "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData"
@@ -191,8 +206,14 @@ RestartDownload: false
 
 ## Path to initial GEOS-Chem restart file + prefix
 ##   ("YYYYMMDD_0000z.nc4" will be appended)
+#RestartFilePrefix: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/globalinv/spinup/gc_2x25_47L_geosfp_CH4/Restarts/GEOSChem.Restart."
+#RestartFilePreviewPrefix: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/globalinv/spinup/gc_2x25_47L_geosfp_CH4/Restarts/GEOSChem.Restart."
 RestartFilePrefix: "/n/holylfs05/LABS/jacob_lab/imi/ch4/tropomi-boundary-conditions/v2023-10/GEOSChem.BoundaryConditions."
 RestartFilePreviewPrefix: "/n/holylfs05/LABS/jacob_lab/imi/ch4/tropomi-boundary-conditions/v2023-10/GEOSChem.BoundaryConditions."
+# Use global boundary condition files for initial conditions
+UseBCsForRestart: false
+UseBCsForSpinupRestart: true
+
 
 ## Path to GEOS-Chem boundary condition files (for regional simulations)
 ## BCversion will be appended to the end of this path. ${BCpath}/${BCversion}

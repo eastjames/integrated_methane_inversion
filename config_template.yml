@@ -47,7 +47,7 @@ UpdateFreqDays: 7
 NudgeFactor: 0.1
 
 ## State vector
-CreateAutomaticRectilinearStateVectorFile: false
+CreateAutomaticRectilinearStateVectorFile: true
 nBufferClusters: 0
 BufferDeg: 0
 LandThreshold: 0.01
@@ -98,22 +98,22 @@ GEOSChemTROPOMIModDir: "base_proj_dir/prep/gc_global_sensitivities/run-before"
 SatObsDir: "/n/home06/nbalasus/holylfs05/gc_global_sensitivities/hourly_blended_tropomi_gosat"
 ## HEMCO_Config.rc
 CustomHEMCOConfig: true
-CustomHEMCOConfigFile: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/global_ch4_inv_2x25_monthly/prep/gc_global_sensitivities/run-before/HEMCO_Config.rc"
+CustomHEMCOConfigFile: "base_proj_dir/prep/gc_global_sensitivities/run-before/HEMCO_Config.rc"
 PrecomputedEmisDir: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/globalinv/hemco/hemco_2x25_geosfp/OutputDir"
 
 
 ## Setup modules
 ##   Turn on/off different steps in setting up the inversion 
-SetupTemplateRundir: true
-SetupSpinupRun: true
-SetupJacobianRuns: true
+SetupTemplateRundir: false
+SetupSpinupRun: false
+SetupJacobianRuns: false
 SetupInversion: false
 SetupPosteriorRun: false
 
 ## Run modules
 ##   Turn on/off different steps in performing the inversion
-RunSetup: true
-DoSpinup: true
+RunSetup: false
+DoSpinup: false
 DoJacobian: true
 DoInversion: false
 DoPosterior: false
@@ -133,7 +133,7 @@ SchedulerPartition: my_partition
 #SchedulerPartition: "huce_cascade,seas_compute,huce_bigmem,shared"
 
 ## Max number of simultaneous Jacobian runs from the job array (-1: no limit)
-MaxSimultaneousRuns: 50
+MaxSimultaneousRuns: 4000
 
 ##====================================================================
 ##

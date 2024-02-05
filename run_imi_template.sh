@@ -4,10 +4,11 @@
 #SBATCH -n 1
 #SBATCH -o "imi_output.log"
 #SBATCH --mem 16000
-#SBATCH -c 32
-#SBATCH -t 0-6:00
+#SBATCH -c 4
+#SBATCH -t 0-36:00
 #SBATCH -p my_partition
-#SBATCH -J t3_run_imi
+#SBATCH -J prod_run_imi
+#SBATCH --mail-type=ALL
 
 module load python
 
@@ -70,8 +71,6 @@ if ! "$isAWS"; then
     fi
 
 fi
-
-echo JDE HERE 1
 
 # Check all necessary config variables are present
 python src/utilities/sanitize_input_yaml.py $ConfigFile || imi_failed

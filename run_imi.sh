@@ -1,9 +1,12 @@
 #!/bin/bash
 
-#SBATCH -N 1
+#SBATCH -p sapphire,seas_compute,seas_compute,huce_cascade,huce_ice
 #SBATCH -c 1
-#SBATCH --mem=2000
+####SBATCH --time=7-00:00
+#SBATCH --time=0-08:00
+#SBATCH --mem=32gb
 #SBATCH -o "imi_output.log"
+#SBATCH -J S5_run
 
 # This script will run the Integrated Methane Inversion (IMI) with GEOS-Chem.
 # For documentation, see https://imi.readthedocs.io.
@@ -59,7 +62,8 @@ CondaFile=$(eval echo $(grep '^CondaFile:' ${ConfigFile} |
     tr -d '"'))
 
 # Load conda/mamba/micromamba e.g. ~/.bashrc
-source $CondaFile
+#source $CondaFile
+module load python
 
 # Activate Conda environment
 printf "\nActivating conda environment: ${CondaEnv}\n"

@@ -133,6 +133,11 @@ create_simulation_dir() {
         -e "s|EmisCH4_Total|EmisCH4_Total_ExclSoilAbs|g" \
         -e "s|GFED                   : on|GFED                   : off|g" HEMCO_Config.rc
 
+    # read from single emis file
+    old_hemco_line='../../prior_run/OutputDir/HEMCO_sa_diagnostics.$YYYY$MM$DD0000.nc'
+    new_hemco_line='../../prior_run/OutputDir/HEMCO_sa_diagnostics.202301010000.nc'
+    sed -i -e "s|${old_hemco_line}|${new_hemco_line}|g" HEMCO_Config.rc
+
     # Determine which elements are BC perturbations
     BC_elem=false
     bcThreshold=$nElements
@@ -155,8 +160,8 @@ create_simulation_dir() {
     # Only save out hourly pressure fields to daily files for base run
     if [[ $x -eq 0 ]] || [[ "$x" = "background" ]]; then
         if "$HourlyCH4"; then
-            sed -i -e 's/'\''Restart/#'\''Restart/g' \
-                -e 's/#'\''LevelEdgeDiags/'\''LevelEdgeDiags/g' \
+            #sed -i -e 's/'\''Restart/#'\''Restart/g' \
+            sed -i -e 's/#'\''LevelEdgeDiags/'\''LevelEdgeDiags/g' \
                 -e 's/LevelEdgeDiags.frequency:   00000100 000000/LevelEdgeDiags.frequency:   00000000 010000/g' \
                 -e 's/LevelEdgeDiags.duration:    00000100 000000/LevelEdgeDiags.duration:    00000001 000000/g' \
                 -e 's/LevelEdgeDiags.mode:        '\''time-averaged/LevelEdgeDiags.mode:        '\''instantaneous/g' HISTORY.rc
@@ -164,7 +169,8 @@ create_simulation_dir() {
     # For all other runs, just disable Restarts
     else
         if "$HourlyCH4"; then
-            sed -i -e 's/'\''Restart/#'\''Restart/g' HISTORY.rc
+            #sed -i -e 's/'\''Restart/#'\''Restart/g' HISTORY.rc
+            echo ''
         fi
     fi
 

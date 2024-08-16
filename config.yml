@@ -2,19 +2,19 @@
 ## Documentation @ https://imi.readthedocs.io/en/latest/getting-started/imi-config-file.html
 
 ## General
-RunName: "Test_Permian_1week"
-isAWS: true
+RunName: "S5"
+isAWS: false
 UseSlurm: true
-SafeMode: true
+SafeMode: false
 S3Upload: false
 
 ## Period of interest
-StartDate: 20180501
-EndDate: 20180508
+StartDate: 20230101
+EndDate: 20240101
 SpinupMonths: 1
 
 ## Use blended TROPOMI+GOSAT data (true)? Or use operational TROPOMI data (false)?
-BlendedTROPOMI: false
+BlendedTROPOMI: true
 
 ## Use observations over water? Set to false to filter out water observations 
 UseWaterObs: false
@@ -34,27 +34,27 @@ isRegional: true
 ##     "SA" : South America ([-59,16], [-88,-31])
 ##     ""   : Use for global global simulation or custom regions
 ##   For example, if the region of interest is in Europe ([33,61],[-30,70]), select "EU".
-RegionID: "NA"
+RegionID: "ME"
 
 ## Region of interest
 ##   These lat/lon bounds are only used if CreateAutomaticRectilinearStateVectorFile: true
 ##   Otherwise lat/lon bounds are determined from StateVectorFile
-LonMin: -105
-LonMax: -103
-LatMin: 31
-LatMax: 33
+LonMin: 25.9375
+LonMax: 64.0625
+LatMin: 11.75
+LatMax: 44.25
 
 ## Kalman filter options
 KalmanMode: false
 UpdateFreqDays: 7
 NudgeFactor: 0.1
-MakePeriodsCSV: true
+MakePeriodsCSV: false
 CustomPeriodsCSV: "/path/to/periods.csv"
 
 ## State vector
-CreateAutomaticRectilinearStateVectorFile: true
-nBufferClusters: 8
-BufferDeg: 5
+CreateAutomaticRectilinearStateVectorFile: false
+nBufferClusters: 0
+BufferDeg: 0
 LandThreshold: 0.25
 OffshoreEmisThreshold: 0
 OptimizeBCs: true
@@ -62,22 +62,24 @@ OptimizeOH: false
 
 ## Point source datasets
 ## Used for visualizations and state vector clustering
-PointSourceDatasets: ["SRON"]
+PointSourceDatasets: ["SRON", "CarbonMapper", "IMEO"]
 
 ## Clustering Options
 ReducedDimensionStateVector: false
 DynamicKFClustering: false
-ClusteringMethod: "kmeans"
-NumberOfElements: 45
+ClusteringMethod: "mini-batch-kmeans"
+NumberOfElements: 1400
 ForcedNativeResolutionElements: 
-  - [31.5, -104]
-EmissionRateFilter: 2500
-PlumeCountFilter: 50
-GroupByCountry: false
+#  - [31.5, -104]
+EmissionRateFilter: 0
+PlumeCountFilter: 0
+GroupByCountry: true
+#ClusteringThreshold: 0.9
+#MaxClusterSize: 64
 
 ## Custom state vector
-StateVectorFile: "/home/ubuntu/integrated_methane_inversion/resources/statevectors/StateVector.nc"
-ShapeFile: "/home/ubuntu/integrated_methane_inversion/resources/shapefiles/PermianBasin_Extent_201712.shp"
+StateVectorFile: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/nationaltile/pre/define_statevectors/S5/agg/out/imi_0_0_1400/StateVector.nc"
+ShapeFile: "resources/shapefiles/PermianBasin_Extent_201712.shp"
 
 ## Inversion
 ## Notes:
@@ -86,13 +88,13 @@ ShapeFile: "/home/ubuntu/integrated_methane_inversion/resources/shapefiles/Permi
 ## - PriorErrorOH is a relative fraction (e.g. 0.1 = 10%)
 ## - PriorErrorBCs is in ppb
 ## - PriorErrorBufferElements is only used if LognormalErrors is true
-LognormalErrors: false
-PriorError: 0.5
+LognormalErrors: true
+PriorError: 2
 PriorErrorBCs: 10.0
 PriorErrorBufferElements: 0.5
 PriorErrorOH: 0.1
 ObsError: 15
-Gamma: 1.0
+Gamma: 0.2
 PrecomputedJacobian: false
 
 ## Grid
@@ -105,8 +107,8 @@ Met: "GEOSFP"
 
 ## Setup modules
 ##   Turn on/off different steps in setting up the inversion 
-RunSetup: true
-SetupTemplateRundir: true
+RunSetup: false
+SetupTemplateRundir: false
 SetupSpinupRun: false
 SetupJacobianRuns: false
 SetupInversion: false
@@ -114,23 +116,25 @@ SetupPosteriorRun: false
 
 ## Run modules
 ##   Turn on/off different steps in performing the inversion
-DoPriorEmis: true
+DoPriorEmis: false
 DoSpinup: false
-DoJacobian: false
+DoJacobian: true
 ReDoJacobian: false
 DoInversion: false
 DoPosterior: false
 
 ## IMI preview
 ##   NOTE: RunSetup must be true to run preview
-DoPreview: true
+DoPreview: false
 DOFSThreshold: 0
 
 ## Resource allocation settings for slurm jobs
 RequestedCPUs: 32
-RequestedMemory: 32000
-RequestedTime: "0-24:00"
-SchedulerPartition: "debug"
+RequestedMemory: 128gb
+#RequestedTime: "0-01:00"
+RequestedTime: "0-72:00"
+#SchedulerPartition: "test,sapphire,huce_cascade,huce_ice,seas_compute,shared"
+SchedulerPartition: "sapphire,seas_compute,shared,huce_cascade,huce_bigmem,huce_ice"
 
 ## Max number of simultaneous Jacobian runs from the job array (-1: no limit)
 MaxSimultaneousRuns: -1
@@ -139,7 +143,7 @@ MaxSimultaneousRuns: -1
 ##   Specifying a value = 1 will submit a separate jacobian simulation for each
 ##   state vector element. Specifying a value > 1 will combine state vector 
 ##   elements into a single jacobian simulation.
-NumJacobianTracers: 5
+NumJacobianTracers: 10
 
 ##====================================================================
 ##
@@ -160,7 +164,7 @@ NumJacobianTracers: 5
 ## Note PerturbValue is in 1e-8 kg/m2/s. eg specifying 1 means the 
 ## perturbation will be 1e-8 kg/m2/s 
 ## PerturbValueOH is a relative scale factor and PerturbValueBCs is in ppb
-PerturbValue: 1.0
+PerturbValue: 10.0
 PerturbValueOH: 1.1
 PerturbValueBCs: 10.0
 
@@ -186,31 +190,41 @@ AIRS: false
 ##------------------------------------------------------------------
 
 ## Path for IMI runs and output
-OutputPath: "/home/ubuntu/imi_output_dir"
+OutputPath: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/nationaltile/runs/S5"
+#OutputPath: "/n/holyscratch01/jacob_lab/jeast/proj/nationaltile/runs/S5"
 
 ## Path to GEOS-Chem input data
-DataPath: "/home/ubuntu/ExtData"
+DataPath: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/nationaltile/met"
+
+## Path to TROPOMI Data
+DataPathTROPOMI: "/n/holylfs05/LABS/jacob_lab/imi/ch4/blended"
 
 ## Conda environment file
-CondaFile: "/home/ubuntu/.bashrc"
+## See envs/README to create the Conda environment specified below
 CondaEnv: "imi_env"
+CondaFile: "${HOME}/.bashrc"
+
+## GEOS-Chem environment file (with fortran compiler, netcdf libraries, etc.)
+##   NOTE: Copy your own file in the envs/ directory within the IMI
+GEOSChemEnv: "envs/Harvard-Cannon/gcclassic.rocky+gnu12.minimal.env"
 
 ## Download initial restart file from AWS S3?
-##  NOTE: Must have AWS CLI enabled
-RestartDownload: true
+##   NOTE: Must have AWS CLI enabled
+RestartDownload: false
 
 ## Path to initial GEOS-Chem restart file + prefix
 ##   ("YYYYMMDD_0000z.nc4" will be appended)
-RestartFilePrefix: "/home/ubuntu/ExtData/BoundaryConditions/v2024-06/GEOSChem.BoundaryConditions."
+RestartFilePrefix: "/n/holylfs05/LABS/jacob_lab/imi/ch4/blended-boundary-conditions/v2024-06/GEOSChem.BoundaryConditions."
 
 ## Path to GEOS-Chem boundary condition files (for regional simulations)
 ## BCversion will be appended to the end of this path. ${BCpath}/${BCversion}
-BCpath: "/home/ubuntu/ExtData/BoundaryConditions"
+BCpath: "/n/holylfs05/LABS/jacob_lab/imi/ch4/blended-boundary-conditions"
 BCversion: "v2024-06"
 
 ## Options to download missing GEOS-Chem input data from AWS S3
-PriorDryRun: true
-SpinupDryrun: true
-ProductionDryRun: true
-PosteriorDryRun: true
-BCdryrun: true
+##   NOTE: Must have AWS CLI enabled
+PriorDryRun: false
+SpinupDryrun: false
+ProductionDryRun: false
+PosteriorDryRun: false
+BCdryrun: false

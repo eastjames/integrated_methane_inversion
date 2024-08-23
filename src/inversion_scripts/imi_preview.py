@@ -36,6 +36,7 @@ from src.inversion_scripts.operators.TROPOMI_operator import (
     read_blended,
 )
 
+warnings.filterwarnings("ignore", message="PROJ: proj_create_from_database")
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
@@ -98,6 +99,7 @@ def get_TROPOMI_data(
         tropomi_data["lon"].append(TROPOMI["longitude"][lat_idx, lon_idx])
         tropomi_data["xch4"].append(TROPOMI["methane"][lat_idx, lon_idx])
         tropomi_data["swir_albedo"].append(TROPOMI["swir_albedo"][lat_idx, lon_idx])
+        tropomi_data['time'].append(TROPOMI['time'][lat_idx, lon_idx])
 
     return tropomi_data
 
@@ -510,6 +512,7 @@ def estimate_averaging_kernel(
     lon = []
     xch4 = []
     albedo = []
+    trtime = []
 
     # Read in and filter tropomi observations (uses parallel processing)
     observation_dicts = Parallel(n_jobs=-1)(
@@ -527,17 +530,17 @@ def estimate_averaging_kernel(
     # Remove any problematic observation dicts (eg. corrupted data file)
     observation_dicts = list(filter(None, observation_dicts))
 
-    for dict in observation_dicts:
-        lat.extend(dict["lat"])
-        lon.extend(dict["lon"])
-        xch4.extend(dict["xch4"])
-        albedo.extend(dict["swir_albedo"])
+    for obs_dict in observation_dicts:
+        lat.extend(obs_dict["lat"])
+        lon.extend(obs_dict["lon"])
+        xch4.extend(obs_dict["xch4"])
+        albedo.extend(obs_dict["swir_albedo"])
 
     # Assemble in dataframe
     df = pd.DataFrame()
     df["lat"] = lat
     df["lon"] = lon
-    df["count"] = np.ones(len(lat))
+    df["obs_count"] = np.ones(len(lat))
     df["swir_albedo"] = albedo
     df["xch4"] = xch4
 
@@ -559,9 +562,32 @@ def estimate_averaging_kernel(
         L_native = 400 * 1000
         lat_step = 4.0
         lon_step = 5.0
-
+    
     # bin observations into gridcells and map onto statevector
-    observation_counts = add_observation_counts(df, state_vector, lat_step, lon_step)
+    to_lon = lambda x: np.floor(x / lon_step) * lon_step
+    to_lat = lambda x: np.floor(x / lat_step) * lat_step
+
+    df_super = df.rename(columns={"lon": "old_lon", "lat": "old_lat"})
+
+    df_super["lat"] = to_lat(df_super.old_lat)
+    df_super["lon"] = to_lon(df_super.old_lon)
+    groups = df_super[['obs_count', 'lat', 'lon']].groupby(['lat', 'lon'])
+    
+    # also group by time to count how many successful observation 
+    # days there are in each grid cell
+    tgroups = df_super[['obs_count','lat','lon','time']].groupby(['lat', 'lon', df_super.time.dt.date])
+
+    observation_counts = xr.merge([
+        groups.count().to_xarray(),
+        state_vector
+    ])
+
+    daily_observation_counts = xr.merge([
+        tgroups.count().to_xarray(),
+        state_vector
+    ])
+    # replace NaNs with 0s to avoid issues with summing
+    daily_observation_counts.values = np.where(np.isnan(daily_observation_counts),0,1)
 
     # parallel processing function
     def process(i):
@@ -573,8 +599,10 @@ def estimate_averaging_kernel(
         # append the calculated length scale of element
         L_temp = L_native * size_temp
         # append the number of obs in each element
-        num_obs_temp = np.nansum(observation_counts["count"].where(mask).values)
-        return emissions_temp, L_temp, size_temp, num_obs_temp
+        num_obs_temp = np.nansum(observation_counts.where(mask).values)
+        # append the number of successful obs days
+        n_success_obs_days = np.nansum(daily_observation_counts.where(mask)).item()
+        return emissions_temp, L_temp, size_temp, num_obs_temp, n_success_obs_days
 
     # in parallel, create lists of emissions, number of observations,
     # and rough length scale for each cluster element in ROI
@@ -583,7 +611,7 @@ def estimate_averaging_kernel(
     )
 
     # unpack list of tuples into individual lists
-    emissions, L, num_native_elements, num_obs = [list(item) for item in zip(*result)]
+    emissions, L, num_native_elements, num_obs, m_superi = [list(item) for item in zip(*result)]
 
     if np.sum(num_obs) < 1:
         sys.exit("Error: No observations found in region of interest")
@@ -598,7 +626,7 @@ def estimate_averaging_kernel(
 
     # State vector, observations
     emissions = np.array(emissions)
-    m = np.array(num_days)  # Number of observation days
+    m_superi = np.array(m_superi)  # Number of successful observation days
     L = np.array(L)
     num_native_elements = np.array(num_native_elements)
 
@@ -610,14 +638,12 @@ def estimate_averaging_kernel(
             rundir_path = preview_dir.split("preview")[0]
             periods = pd.read_csv(f"{rundir_path}periods.csv")
             n_periods = periods.iloc[-1]["period_number"]
-            m = (
-                (endday_dt - startday_dt).days
-            ) / n_periods  # average number of days in each inversion period
         else:
             n_periods = np.floor(
                 (endday_dt - startday_dt).days / config["UpdateFreqDays"]
             )
-            m = config["UpdateFreqDays"]  # number of days in inversion period
+        # average number of successful observation days in each inversion period
+        m_superi = m_superi / n_periods  
         n_obs_per_period = np.round(num_obs / n_periods)
         outstring2 = f"Found {int(np.sum(n_obs_per_period))} observations in the region of interest per inversion period, for {int(n_periods)} period(s)"
 
@@ -642,10 +668,12 @@ def estimate_averaging_kernel(
     sO = config["ObsError"]
 
     # Calculate superobservation error to use in averaging kernel sensitivity equation
-    # from P observations per grid cell = number of observations per grid cell / m days
+    # from P observations per grid cell = number of observations per grid cell / m_superi observation days
     # P is number of observations per grid cell (native state vector element)
-    # Note: to account for clustering we do num_obs / num_native_elements / num_days
-    P = np.array(num_obs) / num_native_elements / num_days
+    # Note: to account for clustering we divide num_obs by the number of 
+    # native state vector elements. This assumes observations within a statevector element 
+    # are distributed evenly amongst constituent grid cells
+    P = np.array(num_obs) / num_native_elements / m_superi
     s_superO_1 = calculate_superobservation_error(
         sO, 1
     )  # for handling cells with 0 observations (avoid divide by 0)
@@ -657,12 +685,19 @@ def estimate_averaging_kernel(
     ]
     s_superO = np.array(s_superO_p) * 1e-9  # convert to ppb
 
+    # TODO: add eqn number from Estrada et al. 2024 once published
     # Averaging kernel sensitivity for each grid element
-    # Note: m is the number of superobservations (just days if native),
-    # but if clustered it is days * num_native_elements
+    # Note: m_superi is the number of superobservations,
+    # defined as sum of days in each grid cell with >0 successful obs
+    # in the state vector element
+    # a is set to 0 where m_superi is 0
+    m_superi = np.array(m_superi)
     k = alpha * (Mair * L * g / (Mch4 * U * p))
-    #a = sA**2 / (sA**2 + (s_superO / k) ** 2 / (m * num_native_elements))
-    a = sA**2 / (sA**2 + (s_superO / k) ** 2 / (num_obs))
+    a = np.where(
+        np.equal(m_superi, 0),
+        float(0),
+        sA**2 / (sA**2 + (s_superO / k) ** 2 / m_superi )
+    )
 
     outstring3 = f"k = {np.round(k,5)} kg-1 m2 s"
     outstring4 = f"a = {np.round(a,5)} \n"
@@ -682,25 +717,6 @@ def estimate_averaging_kernel(
         return a, df, num_days, prior, outstrings
     else:
         return a
-
-
-def add_observation_counts(df, state_vector, lat_step, lon_step):
-    """
-    Given arbitrary observation coordinates in a pandas df, group
-    them by gridcell and return the number of observations mapped
-    onto the statevector dataset
-    """
-    to_lon = lambda x: np.floor(x / lon_step) * lon_step
-    to_lat = lambda x: np.floor(x / lat_step) * lat_step
-
-    df = df.rename(columns={"lon": "old_lon", "lat": "old_lat"})
-
-    df["lat"] = to_lat(df.old_lat)
-    df["lon"] = to_lon(df.old_lon)
-    groups = df.groupby(["lat", "lon"])
-
-    counts_ds = groups.sum().to_xarray().drop_vars(["old_lat", "old_lon"])
-    return xr.merge([counts_ds, state_vector])
 
 
 if __name__ == "__main__":

@@ -586,6 +586,7 @@ def estimate_averaging_kernel(
         tgroups.count().to_xarray(),
         state_vector
     ])
+
     # replace NaNs with 0s to avoid issues with summing
     daily_observation_counts.values = np.where(np.isnan(daily_observation_counts),0,1)
 

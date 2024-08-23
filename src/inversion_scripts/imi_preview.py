@@ -661,7 +661,8 @@ def estimate_averaging_kernel(
     # Note: m is the number of superobservations (just days if native),
     # but if clustered it is days * num_native_elements
     k = alpha * (Mair * L * g / (Mch4 * U * p))
-    a = sA**2 / (sA**2 + (s_superO / k) ** 2 / (m * num_native_elements))
+    #a = sA**2 / (sA**2 + (s_superO / k) ** 2 / (m * num_native_elements))
+    a = sA**2 / (sA**2 + (s_superO / k) ** 2 / (num_obs))
 
     outstring3 = f"k = {np.round(k,5)} kg-1 m2 s"
     outstring4 = f"a = {np.round(a,5)} \n"

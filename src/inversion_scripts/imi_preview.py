@@ -715,25 +715,6 @@ def estimate_averaging_kernel(
         return a
 
 
-def add_observation_counts(df, state_vector, lat_step, lon_step):
-    """
-    Given arbitrary observation coordinates in a pandas df, group
-    them by gridcell and return the number of observations mapped
-    onto the statevector dataset
-    """
-    to_lon = lambda x: np.floor(x / lon_step) * lon_step
-    to_lat = lambda x: np.floor(x / lat_step) * lat_step
-
-    df = df.rename(columns={"lon": "old_lon", "lat": "old_lat"})
-
-    df["lat"] = to_lat(df.old_lat)
-    df["lon"] = to_lon(df.old_lon)
-    groups = df.groupby(["lat", "lon"])
-
-    counts_ds = groups.count().to_xarray().drop_vars(["old_lat", "old_lon"])
-    return xr.merge([counts_ds, state_vector])
-
-
 if __name__ == "__main__":
     try:
         inversion_path = sys.argv[1]

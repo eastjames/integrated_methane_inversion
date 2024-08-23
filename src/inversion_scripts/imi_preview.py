@@ -673,7 +673,7 @@ def estimate_averaging_kernel(
     # Note: to account for clustering we divide num_obs by the number of 
     # native state vector elements. This assumes observations within a statevector element 
     # are distributed evenly amongst constituent grid cells
-    P = np.array(num_obs) / num_native_elements / m_superi
+    P = np.array(num_obs) /  np.array(m_superi)
     s_superO_1 = calculate_superobservation_error(
         sO, 1
     )  # for handling cells with 0 observations (avoid divide by 0)

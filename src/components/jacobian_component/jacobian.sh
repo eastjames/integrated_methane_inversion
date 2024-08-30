@@ -165,12 +165,30 @@ create_simulation_dir() {
                 -e 's/LevelEdgeDiags.frequency:   00000100 000000/LevelEdgeDiags.frequency:   00000000 010000/g' \
                 -e 's/LevelEdgeDiags.duration:    00000100 000000/LevelEdgeDiags.duration:    00000001 000000/g' \
                 -e 's/LevelEdgeDiags.mode:        '\''time-averaged/LevelEdgeDiags.mode:        '\''instantaneous/g' HISTORY.rc
+
+            history_old="  Restart.frequency:          'End',"
+            history_new="  Restart.frequency: 00000100 000000,"
+            sed -i -e "s|${history_old}|${history_new}|g" HISTORY.rc
+
+            history_old="  Restart.duration:           'End',"
+            history_new="  Restart.duration: 00000100 000000,"
+            sed -i -e "s|${history_old}|${history_new}|g" HISTORY.rc
+
+src/components/jacobian_component/jacobian.sh
         fi
     # For all other runs, just disable Restarts
     else
         if "$HourlyCH4"; then
             #sed -i -e 's/'\''Restart/#'\''Restart/g' HISTORY.rc
-            echo ''
+
+            history_old="  Restart.frequency:          'End',"
+            history_new="  Restart.frequency: 00000100 000000,"
+            sed -i -e "s|${history_old}|${history_new}|g" HISTORY.rc
+
+            history_old="  Restart.duration:           'End',"
+            history_new="  Restart.duration: 00000100 000000,"
+            sed -i -e "s|${history_old}|${history_new}|g" HISTORY.rc
+
         fi
     fi
 

@@ -147,15 +147,15 @@ run_posterior() {
 
     # Submit job to job scheduler
     printf "\n=== SUBMITTING POSTERIOR SIMULATION ===\n"
-    ### sbatch --mem $RequestedMemory \
-    ###     -c $RequestedCPUs \
-    ###     -t $RequestedTime \
-    ###     -p $SchedulerPartition \
-    ###     -W ${RunName}_Posterior.run
-    ### wait
+    sbatch --mem $RequestedMemory \
+        -c $RequestedCPUs \
+        -t $RequestedTime \
+        -p $SchedulerPartition \
+        -W ${RunName}_Posterior.run
+    wait
 
-    ### # check if exited with non-zero exit code
-    ### [ ! -f ".error_status_file.txt" ] || imi_failed $LINENO
+    # check if exited with non-zero exit code
+    [ ! -f ".error_status_file.txt" ] || imi_failed $LINENO
 
     printf "\n=== DONE POSTERIOR SIMULATION ===\n"
     if "$KalmanMode"; then
@@ -175,7 +175,7 @@ run_posterior() {
     # Fill missing data (first hour of simulation) in posterior output
     PosteriorRunDir="${RunDirs}/posterior_run"
     printf "\n=== Calling postproc_diags.py for posterior ===\n"
-    ### python ${InversionPath}/src/inversion_scripts/postproc_diags.py $RunName $PosteriorRunDir $PrevDir $StartDate_i $Res
+    python ${InversionPath}/src/inversion_scripts/postproc_diags.py $RunName $PosteriorRunDir $PrevDir $StartDate_i $Res
     wait
     printf "\n=== DONE -- postproc_diags.py ===\n"
 
@@ -186,7 +186,7 @@ run_posterior() {
     GCsourcepth="${PosteriorRunDir}/OutputDir"
     GCDir="./data_geoschem_posterior"
     printf "\n=== Calling setup_gc_cache.py for posterior ===\n"
-    ### python ${InversionPath}/src/inversion_scripts/setup_gc_cache.py $StartDate_i $EndDate_i $GCsourcepth $GCDir
+    python ${InversionPath}/src/inversion_scripts/setup_gc_cache.py $StartDate_i $EndDate_i $GCsourcepth $GCDir
     wait
     printf "\n=== DONE -- setup_gc_cache.py ===\n"
 

@@ -174,7 +174,6 @@ create_simulation_dir() {
             history_new="  Restart.duration: 00000100 000000,"
             sed -i -e "s|${history_old}|${history_new}|g" HISTORY.rc
 
-src/components/jacobian_component/jacobian.sh
         fi
     # For all other runs, just disable Restarts
     else

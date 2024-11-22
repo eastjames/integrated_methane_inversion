@@ -14,6 +14,7 @@ import pandas as pd
 import matplotlib
 import colorcet as cc
 import cartopy.crs as ccrs
+from scipy.ndimage import binary_dilation
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -21,7 +22,6 @@ from joblib import Parallel, delayed
 from src.inversion_scripts.point_sources import get_point_source_coordinates
 from src.inversion_scripts.utils import (
     sum_total_emissions,
-    count_obs_in_mask,
     plot_field,
     filter_tropomi,
     filter_blended,
@@ -36,7 +36,6 @@ from src.inversion_scripts.operators.TROPOMI_operator import (
     read_blended,
 )
 
-warnings.filterwarnings("ignore", message="PROJ: proj_create_from_database")
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
@@ -67,7 +66,7 @@ def get_TROPOMI_data(
             dictionary of the extracted values
     """
     # tropomi data dictionary
-    tropomi_data = {"lat": [], "lon": [], "xch4": [], "swir_albedo": []}
+    tropomi_data = {"lat": [], "lon": [], "xch4": [], "swir_albedo": [], "time": []}
 
     # Load the TROPOMI data
     assert isinstance(BlendedTROPOMI, bool), "BlendedTROPOMI is not a bool"
@@ -99,7 +98,7 @@ def get_TROPOMI_data(
         tropomi_data["lon"].append(TROPOMI["longitude"][lat_idx, lon_idx])
         tropomi_data["xch4"].append(TROPOMI["methane"][lat_idx, lon_idx])
         tropomi_data["swir_albedo"].append(TROPOMI["swir_albedo"][lat_idx, lon_idx])
-        tropomi_data['time'].append(TROPOMI['time'][lat_idx, lon_idx])
+        tropomi_data["time"].append(TROPOMI["time"][lat_idx, lon_idx])
 
     return tropomi_data
 
@@ -142,13 +141,6 @@ def imi_preview(
         kf_index=None,
     )
     mask = state_vector_labels <= last_ROI_element
-
-    # Count the number of observations in the region of interest
-    num_obs = count_obs_in_mask(mask, df)
-    if num_obs < 1:
-        sys.exit("Error: No observations found in region of interest")
-    outstring2 = f"Found {num_obs} observations in the region of interest"
-    print("\n" + outstring2)
 
     # ----------------------------------
     # Estimate dollar cost
@@ -208,7 +200,6 @@ def imi_preview(
 
     # Write preview diagnostics to text file
     outputtextfile = open(os.path.join(preview_dir, "preview_diagnostics.txt"), "w+")
-    outputtextfile.write("##" + outstring2 + "\n")
     outputtextfile.write("##" + outstring6 + "\n")
     outputtextfile.write("##" + outstring7 + "\n")
     outputtextfile.write(outstrings)
@@ -535,6 +526,7 @@ def estimate_averaging_kernel(
         lon.extend(obs_dict["lon"])
         xch4.extend(obs_dict["xch4"])
         albedo.extend(obs_dict["swir_albedo"])
+        trtime.extend(obs_dict["time"])
 
     # Assemble in dataframe
     df = pd.DataFrame()
@@ -543,6 +535,7 @@ def estimate_averaging_kernel(
     df["obs_count"] = np.ones(len(lat))
     df["swir_albedo"] = albedo
     df["xch4"] = xch4
+    df["time"] = trtime
 
     # Set resolution specific variables
     # L_native = Rough length scale of native state vector element [m]
@@ -562,7 +555,7 @@ def estimate_averaging_kernel(
         L_native = 400 * 1000
         lat_step = 4.0
         lon_step = 5.0
-    
+
     # bin observations into gridcells and map onto statevector
     to_lon = lambda x: np.floor(x / lon_step) * lon_step
     to_lat = lambda x: np.floor(x / lat_step) * lat_step
@@ -571,28 +564,44 @@ def estimate_averaging_kernel(
 
     df_super["lat"] = to_lat(df_super.old_lat)
     df_super["lon"] = to_lon(df_super.old_lon)
-    groups = df_super[['obs_count', 'lat', 'lon']].groupby(['lat', 'lon'])
-    
-    # also group by time to count how many successful observation 
-    # days there are in each grid cell
-    tgroups = df_super[['obs_count','lat','lon','time']].groupby(['lat', 'lon', df_super.time.dt.date])
 
-    observation_counts = xr.merge([
-        groups.count().to_xarray(),
-        state_vector
-    ])
+    # extract relevant fields and group by lat, lon, date
+    df_super = df_super[["lat", "lon", "time", "obs_count"]].copy()
+    df_super["date"] = df_super["time"].dt.floor("D")
+    grouped = (
+        df_super.groupby(["lat", "lon", "date"]).size().reset_index(name="obs_count")
+    )
 
-    daily_observation_counts = xr.merge([
-        tgroups.count().to_xarray(),
-        state_vector
-    ])
+    # convert the grouped DataFrame to an xarray Dataset
+    daily_observation_counts = grouped.set_index(["lat", "lon", "date"]).to_xarray()
 
-    # replace NaNs with 0s to avoid issues with summing
-    daily_observation_counts.values = np.where(np.isnan(daily_observation_counts),0,1)
+    # create a daily superobservation count as well
+    daily_observation_counts["superobs_count"] = daily_observation_counts["obs_count"]
+
+    # set the nans to 0 if there are no observations. For superobs each day is 1 superob
+    daily_observation_counts["superobs_count"].values = np.where(
+        np.isnan(daily_observation_counts["superobs_count"].values), 0, 1
+    )
+    daily_observation_counts["obs_count"].values = np.nan_to_num(
+        daily_observation_counts["obs_count"].values
+    )
 
     # parallel processing function
     def process(i):
         mask = state_vector_labels == i
+
+        # Following eqn. 11 of Nesser et al., 2021 we increase the mask
+        # size by adding concentric rings to mimic transport/diffusion
+        # when counting observations. We use 2 concentric rings based on
+        # empirical evidence -- Nesser et al used 3.
+        structure = np.ones((5, 5))
+        buffered_mask = binary_dilation(mask, structure=structure)
+        buffered_mask = xr.DataArray(
+            buffered_mask,
+            dims=state_vector_labels.dims,
+            coords=state_vector_labels.coords,
+        )
+
         # prior emissions for each element (in Tg/y)
         emissions_temp = sum_total_emissions(prior, areas, mask)
         # number of native state vector elements in each element
@@ -600,9 +609,13 @@ def estimate_averaging_kernel(
         # append the calculated length scale of element
         L_temp = L_native * size_temp
         # append the number of obs in each element
-        num_obs_temp = np.nansum(observation_counts.where(mask).values)
+        num_obs_temp = np.nansum(
+            daily_observation_counts["obs_count"].where(buffered_mask).values
+        )
         # append the number of successful obs days
-        n_success_obs_days = np.nansum(daily_observation_counts.where(mask)).item()
+        n_success_obs_days = np.nansum(
+            daily_observation_counts["superobs_count"].where(buffered_mask).values
+        ).item()
         return emissions_temp, L_temp, size_temp, num_obs_temp, n_success_obs_days
 
     # in parallel, create lists of emissions, number of observations,
@@ -612,11 +625,14 @@ def estimate_averaging_kernel(
     )
 
     # unpack list of tuples into individual lists
-    emissions, L, num_native_elements, num_obs, m_superi = [list(item) for item in zip(*result)]
+    emissions, L, num_native_elements, num_obs, m_superi = [
+        list(item) for item in zip(*result)
+    ]
 
     if np.sum(num_obs) < 1:
         sys.exit("Error: No observations found in region of interest")
     outstring2 = f"Found {np.sum(num_obs)} observations in the region of interest"
+    print("\n" + outstring2)
 
     # ----------------------------------
     # Estimate information content
@@ -644,7 +660,7 @@ def estimate_averaging_kernel(
                 (endday_dt - startday_dt).days / config["UpdateFreqDays"]
             )
         # average number of successful observation days in each inversion period
-        m_superi = m_superi / n_periods  
+        m_superi = m_superi / n_periods
         n_obs_per_period = np.round(num_obs / n_periods)
         outstring2 = f"Found {int(np.sum(n_obs_per_period))} observations in the region of interest per inversion period, for {int(n_periods)} period(s)"
 
@@ -669,12 +685,10 @@ def estimate_averaging_kernel(
     sO = config["ObsError"]
 
     # Calculate superobservation error to use in averaging kernel sensitivity equation
-    # from P observations per grid cell = number of observations per grid cell / m_superi observation days
+    # from P observations per grid cell = number of observations per grid cell / number of super-observations
     # P is number of observations per grid cell (native state vector element)
-    # Note: to account for clustering we divide num_obs by the number of 
-    # native state vector elements. This assumes observations within a statevector element 
-    # are distributed evenly amongst constituent grid cells
-    P = np.array(num_obs) /  np.array(m_superi)
+    P = np.array(num_obs) / m_superi
+    P = np.nan_to_num(P)  # replace nan with 0
     s_superO_1 = calculate_superobservation_error(
         sO, 1
     )  # for handling cells with 0 observations (avoid divide by 0)
@@ -694,11 +708,10 @@ def estimate_averaging_kernel(
     # a is set to 0 where m_superi is 0
     m_superi = np.array(m_superi)
     k = alpha * (Mair * L * g / (Mch4 * U * p))
-    a = np.where(
-        np.equal(m_superi, 0),
-        float(0),
-        sA**2 / (sA**2 + (s_superO / k) ** 2 / m_superi )
-    )
+    a = sA**2 / (sA**2 + (s_superO / k) ** 2 / (m_superi))
+
+    # Places with 0 superobs should be 0
+    a = np.where(np.equal(m_superi, 0), float(0), a)
 
     outstring3 = f"k = {np.round(k,5)} kg-1 m2 s"
     outstring4 = f"a = {np.round(a,5)} \n"
@@ -713,9 +726,13 @@ def estimate_averaging_kernel(
 
     if preview:
         outstrings = (
-            f"##{outstring1}\n" + f"##{outstring3}\n" + f"##{outstring4}\n" + outstring5
+            f"##{outstring1}\n"
+            + f"##{outstring2}\n"
+            + f"##{outstring3}\n"
+            + f"##{outstring4}\n"
+            + outstring5
         )
-        return a, df, num_days, prior, outstrings
+        return a, df.drop(columns=["time"]), num_days, prior, outstrings
     else:
         return a
 
@@ -734,6 +751,8 @@ if __name__ == "__main__":
     except Exception as err:
         with open(".preview_error_status.txt", "w") as file1:
             # Writing data to a file
-            file1.write("This file is used to tell the controlling script that the imi_preview failed")
+            file1.write(
+                "This file is used to tell the controlling script that the imi_preview failed"
+            )
         print(err)
         sys.exit(1)

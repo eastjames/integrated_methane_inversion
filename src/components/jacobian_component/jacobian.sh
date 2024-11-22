@@ -174,7 +174,6 @@ create_simulation_dir() {
             history_new="  Restart.duration: 00000100 000000,"
             sed -i -e "s|${history_old}|${history_new}|g" HISTORY.rc
 
-src/components/jacobian_component/jacobian.sh
         fi
     # For all other runs, just disable Restarts
     else
@@ -423,16 +422,15 @@ run_jacobian() {
 
         printf "\n=== SUBMITTING JACOBIAN SIMULATIONS ===\n"
         # Submit job to job scheduler
-        source submit_jacobian_simulations_array.sh
-
         if "$LognormalErrors"; then
             sbatch --mem $RequestedMemory \
                 -c $RequestedCPUs \
                 -t $RequestedTime \
                 -p $SchedulerPartition \
-                -W run_bkgd_simulation.sh
-            wait
+                run_bkgd_simulation.sh
         fi
+        source submit_jacobian_simulations_array.sh
+
 
         # check if any jacobians exited with non-zero exit code
         [ ! -f ".error_status_file.txt" ] || imi_failed $LINENO

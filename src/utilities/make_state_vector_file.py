@@ -148,6 +148,11 @@ def make_state_vector_file(
         buffer_min_lat = deg_lat * 3
         buffer_min_lon = deg_lon * 3
 
+    # JDE 9/17/2024
+    # I already account for 3 grid buffer so get rid of this min buffer
+    buffer_min_lat = 0
+    buffer_min_lon = 0
+
     # set the buffer degrees to the maximum to ensure 
     # that the buffer is at least the minimum (3 extra grid cells on each side)
     buffer_deg_lat = max(buffer_deg, buffer_min_lat)

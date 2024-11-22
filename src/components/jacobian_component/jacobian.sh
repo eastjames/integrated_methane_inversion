@@ -406,13 +406,13 @@ run_jacobian() {
         set -e
         # update perturbation values before running jacobian simulations
         printf "\n=== UPDATING PERTURBATION SFs ===\n"
-        python ${InversionPath}/src/components/jacobian_component/make_perturbation_sf.py $ConfigPath $jacobian_period $PerturbValue
+        #python ${InversionPath}/src/components/jacobian_component/make_perturbation_sf.py $ConfigPath $jacobian_period $PerturbValue
 
         cd ${RunDirs}/jacobian_runs
 
         # create 1ppb restart file
         OrigRestartFile=$(readlink ${RunName}_0000/Restarts/GEOSChem.Restart.${StartDate}_0000z.nc4)
-        python ${InversionPath}/src/components/jacobian_component/make_jacobian_icbc.py $OrigRestartFile ${RunDirs}/jacobian_1ppb_ics_bcs/Restarts $StartDate
+        #python ${InversionPath}/src/components/jacobian_component/make_jacobian_icbc.py $OrigRestartFile ${RunDirs}/jacobian_1ppb_ics_bcs/Restarts $StartDate
         cd ${RunDirs}/jacobian_1ppb_ics_bcs/Restarts/
         if [ -f GEOSChem.BoundaryConditions.1ppb.${StartDate}_0000z.nc4 ]; then
             mv GEOSChem.BoundaryConditions.1ppb.${StartDate}_0000z.nc4 GEOSChem.Restart.1ppb.${StartDate}_0000z.nc4
@@ -422,14 +422,15 @@ run_jacobian() {
 
         printf "\n=== SUBMITTING JACOBIAN SIMULATIONS ===\n"
         # Submit job to job scheduler
-        if "$LognormalErrors"; then
-            sbatch --mem $RequestedMemory \
-                -c $RequestedCPUs \
-                -t $RequestedTime \
-                -p $SchedulerPartition \
-                run_bkgd_simulation.sh
-        fi
-        source submit_jacobian_simulations_array.sh
+        ## if "$LognormalErrors"; then
+        ##     sbatch --mem $RequestedMemory \
+        ##         -c $RequestedCPUs \
+        ##         -t $RequestedTime \
+        ##         -p $SchedulerPartition \
+        ##         run_bkgd_simulation.sh
+        ## fi
+        #source submit_jacobian_simulations_array.sh
+        source resubmit_jacobian_simulations_array.sh
 
 
         # check if any jacobians exited with non-zero exit code

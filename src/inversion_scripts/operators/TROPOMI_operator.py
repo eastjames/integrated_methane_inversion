@@ -21,6 +21,9 @@ from src.inversion_scripts.operators.operator_utilities import (
     nearest_loc,
 )
 
+from functools import partial
+print = partial(print, flush=True)
+
 
 def apply_average_tropomi_operator(
     filename,
@@ -83,7 +86,7 @@ def apply_average_tropomi_operator(
 
     # Number of TROPOMI observations
     n_obs = len(sat_ind[0])
-    print("Found", n_obs, "TROPOMI observations.")
+    print("Found", n_obs, f"TROPOMI observations in {filename}")
 
     # get the lat/lons of gc gridcells
     gc_lat_lon = get_gc_lat_lon(gc_cache, gc_startdate)
@@ -117,6 +120,13 @@ def apply_average_tropomi_operator(
 
     # Read GEOS_Chem data for the dates of interest
     all_date_gc = read_all_geoschem(all_strdate, gc_cache, n_elements, config, build_jacobian)
+    if all_date_gc == 'failed':
+        print(f'read_all_geoschem failed on dates {all_strdate}')
+        print(f'{gc_cache = }')
+        print(f'{n_elements = }')
+        print(f'{config = }')
+        print(f'{build_jacobian = }')
+        return 'failed'
 
     # Initialize array with n_gridcells rows and 5 columns. Columns are
     # TROPOMI CH4, GEOSChem CH4, longitude, latitude, observation counts

@@ -111,6 +111,12 @@ if __name__ == "__main__":
         gc_cache = f"{workdir}/data_geoschem_posterior"
         outputdir = f"{workdir}/data_converted_posterior"
         vizdir = f"{workdir}/data_visualization_posterior"
+
+        if config['LognormalErrors']:
+            gc_cache = f'{gc_cache}_ln'
+            outputdir = f'{outputdir}_ln'
+            vizdir = f'{vizdir}_ln'
+
     xlim = [lonmin, lonmax]
     ylim = [latmin, latmax]
     gc_startdate = np.datetime64(datetime.datetime.strptime(start, "%Y-%m-%d %H:%M:%S"))

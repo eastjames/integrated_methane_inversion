@@ -14,6 +14,8 @@ from src.inversion_scripts.operators.TROPOMI_operator import (
     apply_tropomi_operator,
 )
 from joblib import Parallel, delayed
+from functools import partial
+print = partial(print, flush = True)
 
 
 def apply_operator(operator, params, config):

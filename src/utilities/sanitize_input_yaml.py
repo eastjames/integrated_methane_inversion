@@ -109,7 +109,7 @@ conditional_dict["ReducedDimensionStateVector"] = [
     "PlumeCountFilter",
     "GroupByCountry"
 ]
-conditional_dict["PrecomputedJacobian"] = ["ReferenceRunDir"]
+#conditional_dict["PrecomputedJacobian"] = ["ReferenceRunDir"]
 conditional_dict["S3Upload"] = [
     "S3UploadPath",
     "S3UploadFiles",

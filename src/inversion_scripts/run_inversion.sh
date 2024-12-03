@@ -107,12 +107,14 @@ if ! "$PrecomputedJacobian"; then
 
 else
 
-    # Only postprocess the Prior simulation
-    python postproc_diags.py $RunName $PriorRunDir $PrevDir $StartDate $Res; wait
-    if "$LognormalErrors"; then
-        # for lognormal errors we need to postprocess the background run too
-        python postproc_diags.py $RunName $BackgroundRunDir $PrevDir $StartDate $Res; wait
-    fi
+    echo 'precomputed jacobian'
+
+    ### # Only postprocess the Prior simulation
+    ### python postproc_diags.py $RunName $PriorRunDir $PrevDir $StartDate $Res; wait
+    ### if "$LognormalErrors"; then
+    ###     # for lognormal errors we need to postprocess the background run too
+    ###     python postproc_diags.py $RunName $BackgroundRunDir $PrevDir $StartDate $Res; wait
+    ### fi
 fi
 printf "DONE -- postproc_diags.py\n\n"
 
@@ -121,6 +123,7 @@ printf "DONE -- postproc_diags.py\n\n"
 #=======================================================================
 
 printf "Calling setup_gc_cache.py\n"
+if ! "$PrecomputedJacobian"; then
 if "$LognormalErrors"; then
     # for lognormal errors we use the clean background run
     GCsourcepth="${BackgroundRunDir}/OutputDir"
@@ -133,6 +136,7 @@ else
 fi
 
 python setup_gc_cache.py $StartDate $EndDate $GCsourcepth $GCDir; wait
+fi
 printf "DONE -- setup_gc_cache.py\n\n"
 
 #=======================================================================
@@ -149,15 +153,20 @@ if ! "$PrecomputedJacobian"; then
 else
 
     buildJacobian="False"
-    jacobian_sf=./jacobian_scale_factors.npy
+
+    # scale factors only needed if changing emissions
+    #jacobian_sf=./jacobian_scale_factors.npy
+    jacobian_sf="None"
 
 fi
 
+if ! "$PrecomputedJacobian"; then
 python jacobian.py ${invPath}/${configFile} $StartDate $EndDate $LonMinInvDomain $LonMaxInvDomain $LatMinInvDomain $LatMaxInvDomain $nElements $tropomiCache $BlendedTROPOMI $UseWaterObs $isPost $period_i $buildJacobian False; wait
 if "$LognormalErrors"; then
     # for lognormal error visualization of the prior we sample the prior run
     # without constructing the jacobian matrix
     python jacobian.py ${invPath}/${configFile} $StartDate $EndDate $LonMinInvDomain $LonMaxInvDomain $LatMinInvDomain $LatMaxInvDomain $nElements $tropomiCache $BlendedTROPOMI  $UseWaterObs $isPost $period_i False True; wait
+fi
 fi
 printf " DONE -- jacobian.py\n\n"
 
@@ -177,7 +186,7 @@ fi
 
 if "$LognormalErrors"; then
     # for lognormal errors we merge our y, y_bkgd and partial K matrices
-    python merge_partial_k.py $JacobianDir $StateVectorFile $ObsError $PrecomputedJacobian
+    python merge_partial_k.py $JacobianDir $StateVectorFile $ObsError $PrecomputedJacobian ${invPath}/${configFile}
 
     # then we run the inversion
     printf "Calling lognormal_invert.py\n"

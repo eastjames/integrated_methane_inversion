@@ -13,6 +13,9 @@ import xarray as xr
 from netCDF4 import Dataset
 from scipy.sparse import spdiags
 
+from functools import partial
+print = partial(print, flush = True)
+
 
 def lognormal_invert(config, state_vector_filepath, jacobian_sf):
     """
@@ -25,6 +28,13 @@ def lognormal_invert(config, state_vector_filepath, jacobian_sf):
         state_vector_filepath [String] : path to state vector netcdf file
         jacobian_sf           [String] : path to numpy array of scale factors
     """
+
+    # jde ensemble
+    if 'EnsembleDirName' in config.keys():
+        ens_dir = config['EnsembleDirName']
+    else:
+        ens_dir = 'base_inv'
+
     state_vector = xr.load_dataset(state_vector_filepath)
     state_vector_labels = state_vector["StateVector"]
     lats, lons = state_vector_labels.lat, state_vector_labels.lon
@@ -81,7 +91,7 @@ def lognormal_invert(config, state_vector_filepath, jacobian_sf):
     K_full = np.concatenate((K_ROI, K_normal), axis=1)
 
     # get the So matrix
-    ds = np.load("so_super.npz")
+    ds = np.load(f'{ens_dir}/so_super.npz')
     so = ds["so"]
 
     # Calculate the difference between tropomi and the background
@@ -120,8 +130,11 @@ def lognormal_invert(config, state_vector_filepath, jacobian_sf):
     # TODO: parallelize this once we allow vectorization of these values
     combinations = list(product(gamma_vals, prior_errors, sa_bc_vals, sa_buffer_elems, sa_oh_vals))
     for gamma, sa, sa_bc, sa_buffer, sa_oh in combinations:
+
+
+
         lnsa_val = np.log(sa)
-        results_save_path = f"inversion_result_ln.nc"
+        results_save_path = f"{ens_dir}/inversion_result_ln.nc"
 
         # Create lnSa matrix
         # lnsa = lnsa_val**2 * np.ones((n, 1))
@@ -197,6 +210,7 @@ def lognormal_invert(config, state_vector_filepath, jacobian_sf):
                 )
                 / np.exp(lnxn[:-num_normal_elems])
             )
+            print(f'{xn_iteration_pct_diff = }')
 
             lnxn = lnxn_update
 
@@ -282,7 +296,7 @@ def lognormal_invert(config, state_vector_filepath, jacobian_sf):
         ds.ScaleFactor.attrs["units"] = "1"
 
         # save to netcdf file
-        ds.to_netcdf("gridded_posterior_ln.nc")
+        ds.to_netcdf(f'{ens_dir}/gridded_posterior_ln.nc')
 
         # Save (ungridded) inversion results
         dataset = Dataset(results_save_path, "w", format="NETCDF4_CLASSIC")

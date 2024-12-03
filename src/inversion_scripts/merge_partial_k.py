@@ -6,6 +6,8 @@ import numpy as np
 import xarray as xr
 from src.inversion_scripts.utils import load_obj, calculate_superobservation_error
 
+from functools import partial
+print = partial(print, flush = True)
 
 def merge_partial_k(satdat_dir, lat_bounds, lon_bounds, obs_err, precomp_K):
     """
@@ -36,7 +38,10 @@ def merge_partial_k(satdat_dir, lat_bounds, lon_bounds, obs_err, precomp_K):
     tropomi = np.array([])
     geos_prior = np.array([])
     so = np.array([])
+
+    print('Merging K')
     for i, f in enumerate(files):
+        print(f'\r{f}',end='')
         obs_error = obs_err  # reset obs_error to original value
         # Get paths
         pth = os.path.join(satdat_dir, f)
@@ -65,18 +70,21 @@ def merge_partial_k(satdat_dir, lat_bounds, lon_bounds, obs_err, precomp_K):
 
         # read K from reference dir if precomp_K is true
         if precomp_K:
+            pass
+            print('Using precomputed K so not merging')
             # Get Jacobian from reference inversion
-            fi_ref = pth.replace("data_converted", "data_converted_reference")
-            dat_ref = load_obj(fi_ref)
-            K_temp = dat_ref["K"][ind[0]]
+            ## fi_ref = pth.replace("data_converted", "data_converted_reference")
+            ## dat_ref = load_obj(fi_ref)
+            ## K_temp = dat_ref["K"][ind[0]]
         else:
             K_temp = obj["K"][ind[0]]
 
         # append partial Ks to build full jacobian
-        if i == 0:
-            K = K_temp
-        else:
-            K = np.append(K, K_temp, axis=0)
+        if not precomp_K:
+            if i == 0:
+                K = K_temp
+            else:
+                K = np.append(K, K_temp, axis=0)
 
         # calculate superobservation error
         s_superO_1 = calculate_superobservation_error(obs_error, 1)
@@ -95,10 +103,19 @@ def merge_partial_k(satdat_dir, lat_bounds, lon_bounds, obs_err, precomp_K):
         obs_error = [obs if obs > 0 else 1 for obs in obs_error]
         so = np.concatenate((so, obs_error))
 
-    gc_ch4_prior = np.asmatrix(geos_prior)
+    if not precomp_K:
+        gc_ch4_prior = np.asmatrix(geos_prior)
 
-    obs_tropomi = np.asmatrix(tropomi)
-    return gc_ch4_prior, obs_tropomi, K, so
+    if not precomp_K:
+        obs_tropomi = np.asmatrix(tropomi)
+
+    print('Done merging K')
+
+    if precomp_K:
+        return None, None, None, so
+    else:
+        return gc_ch4_prior, obs_tropomi, K, so
+    
 
 
 if __name__ == "__main__":
@@ -107,6 +124,7 @@ if __name__ == "__main__":
     state_vector_filepath = sys.argv[2]
     obs_error = float(sys.argv[3])
     precomputed_jacobian = sys.argv[4] == "true"
+    config_path = sys.argv[5]
 
     # directory containing partial K matrices
     # Get observed and GEOS-Chem-simulated TROPOMI columns
@@ -118,12 +136,28 @@ if __name__ == "__main__":
     lon_bounds = [np.min(state_vector.lon.values), np.max(state_vector.lon.values)]
     lat_bounds = [np.min(state_vector.lat.values), np.max(state_vector.lat.values)]
 
+    # jde ensemble
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+    if 'EnsembleDirName' in config.keys():
+        ens_dir = config['EnsembleDirName']
+    else:
+        ense_dir = 'base_inv'
+
     # Paths to GEOS/satellite data
     gc_ch4_bkgd, obs_tropomi, jacobian_K, so = merge_partial_k(
         satdat_dir, lat_bounds, lon_bounds, obs_error, precomputed_jacobian
     )
 
-    np.savez("full_jacobian_K.npz", K=jacobian_K)
-    np.savez("obs_ch4_tropomi.npz", obs_tropomi=obs_tropomi)
-    np.savez("gc_ch4_bkgd.npz", gc_ch4_bkgd=gc_ch4_bkgd)
-    np.savez("so_super.npz", so=so)
+    if not precomputed_jacobian:
+        # only save if computing jacobian for the first time
+        np.savez("full_jacobian_K.npz", K=jacobian_K)
+        np.savez("obs_ch4_tropomi.npz", obs_tropomi=obs_tropomi)
+        np.savez("gc_ch4_bkgd.npz", gc_ch4_bkgd=gc_ch4_bkgd)
+
+    # always saved out
+    os.makedirs(ens_dir, exist_ok = True)
+    np.savez(f'{ens_dir}/so_super.npz', so=so)
+
+
+

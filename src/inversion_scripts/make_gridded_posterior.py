@@ -2,6 +2,7 @@ import datetime
 import xarray as xr
 import os
 import numpy as np
+import yaml
 
 
 def do_gridding(vector, statevector):
@@ -98,5 +99,22 @@ if __name__ == "__main__":
     posterior_SF_path = sys.argv[1]
     state_vector_path = sys.argv[2]
     save_path = sys.argv[3]
+    config_path = sys.argv[4]
 
-    make_gridded_posterior(posterior_SF_path, state_vector_path, save_path)
+    # jde ensemble
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+
+    if 'EnsembleDirName' in config.keys():
+        ens_dir = config['EnsembleDirName']
+    else:
+        ens_dir = 'base_inv'
+
+    save_path_ens = f'{ens_dir}/{save_path}'
+
+    make_gridded_posterior(posterior_SF_path, state_vector_path, save_path_ens)
+
+
+
+
+

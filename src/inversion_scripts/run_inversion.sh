@@ -194,7 +194,7 @@ if "$LognormalErrors"; then
     printf "DONE -- lognormal_invert.py\n\n"
 else
     posteriorSF="./inversion_result.nc"
-    python_args=(invert.py $nElements $JacobianDir $posteriorSF $LonMinInvDomain $LonMaxInvDomain $LatMinInvDomain $LatMaxInvDomain $PriorError $ObsError $Gamma $Res $jacobian_sf $ErrorBCs $ErrorOH)
+    python_args=(invert.py $nElements $JacobianDir $posteriorSF $LonMinInvDomain $LonMaxInvDomain $LatMinInvDomain $LatMaxInvDomain $PriorError $ObsError $Gamma $Res $jacobian_sf $ErrorBCs $ErrorOH ${invPath}/${configFile}) 
 
     printf "Calling invert.py\n"
     python "${python_args[@]}"; wait
@@ -205,7 +205,7 @@ else
     GriddedPosterior="./gridded_posterior.nc"
 
     printf "Calling make_gridded_posterior.py\n"
-    python make_gridded_posterior.py $posteriorSF $StateVectorFile $GriddedPosterior; wait
+    python make_gridded_posterior.py $posteriorSF $StateVectorFile $GriddedPosterior ${invPath}/${configFile}; wait
     printf "DONE -- make_gridded_posterior.py\n\n"
 fi
 

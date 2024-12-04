@@ -1,12 +1,11 @@
 #!/bin/bash
 
-#SBATCH -p sapphire,seas_compute,seas_compute,huce_cascade,huce_ice
+#SBATCH -p seas_compute,sapphire,shared,huce_cascade,huce_ice
 #SBATCH -c 1
-####SBATCH --time=7-00:00
-#SBATCH --time=0-08:00
-#SBATCH --mem=32gb
-#SBATCH -o "imi_output.log"
-#SBATCH -J S5_run
+#SBATCH --time=0-04:00
+#SBATCH --mem=4gb
+#SBATCH -o "imi_output.log.%j"
+#SBATCH -J S8_run
 
 # This script will run the Integrated Methane Inversion (IMI) with GEOS-Chem.
 # For documentation, see https://imi.readthedocs.io.
@@ -130,6 +129,7 @@ fi
 # Path to inversion setup
 InversionPath=$(pwd -P)
 ConfigPath=${InversionPath}/${ConfigFile}
+export ConfigFileForInversion=${ConfigFile}
 # add inversion path to python path
 export PYTHONPATH=${PYTHONPATH}:${InversionPath}
 

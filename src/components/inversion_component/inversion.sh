@@ -79,7 +79,7 @@ run_inversion() {
     else
         cd ${RunDirs}/inversion
     fi
-    sed -i -e "s|configFile=.*|configFile=${ConfigFile}|g" run_inversion.sh
+    #sed -i -e "s|configFile=.*|configFile=${ConfigFile}|g" run_inversion.sh
 
     # Execute inversion driver script
     sbatch --mem $RequestedMemory \

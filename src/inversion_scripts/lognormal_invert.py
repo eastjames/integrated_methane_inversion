@@ -178,6 +178,7 @@ def lognormal_invert(config, state_vector_filepath, jacobian_sf):
         # ln(xn) = x(n-1) + inv(term1+term2)@(term3 + term4)
         # where x(n-1) is the previous iteration of xn until convergence
         print("Status: Iterating to calculate ln(xn)")
+        print(f'Inversion ensemble member: {ens_dir}')
         while xn_iteration_pct_diff >= convergence_threshold:
             
             # we need to transform lnxn to xn to calculate K_prime

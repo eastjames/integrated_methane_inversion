@@ -9,19 +9,9 @@ Arguments
 """
 # ************ Add required config variables to the corresponding list **************
 
-# variables only required by AWS
-config_required_aws = []
-
-# variables only required by local cluster
-config_required_local_cluster = [
-    "DataPathTROPOMI",
-    "GEOSChemEnv",
-]
-
 # variables required on all systems
 config_required = [
     "RunName",
-    "isAWS",
     "UseSlurm",
     "SafeMode",
     "S3Upload",
@@ -56,7 +46,7 @@ config_required = [
     "SetupJacobianRuns",
     "SetupInversion",
     "SetupPosteriorRun",
-    "DoPriorEmis",
+    "DoHemcoPriorEmis",
     "DoSpinup",
     "ReDoJacobian",
     "DoJacobian",
@@ -84,7 +74,7 @@ config_required = [
     "RestartFilePrefix",
     "BCpath",
     "BCversion",
-    "PriorDryRun",
+    "HemcoPriorEmisDryRun",
     "SpinupDryrun",
     "ProductionDryRun",
     "PosteriorDryRun",
@@ -92,22 +82,23 @@ config_required = [
     "LognormalErrors",
     "MakePeriodsCSV",
     "UseWaterObs",
+    "EnableOSSE",
 ]
 
-# dict of variables that are required if another variable is set to true 
+# dict of variables that are required if another variable is set to true
 # For example UpdateFreqDays is only required if KalmanMode is set to true
 conditional_dict = {}
 conditional_dict["KalmanMode"] = [
     "UpdateFreqDays",
     "NudgeFactor",
-    "DynamicKFClustering"
+    "DynamicKFClustering",
 ]
 conditional_dict["ReducedDimensionStateVector"] = [
     "ClusteringMethod",
     "NumberOfElements",
     "EmissionRateFilter",
     "PlumeCountFilter",
-    "GroupByCountry"
+    "GroupByCountry",
 ]
 #conditional_dict["PrecomputedJacobian"] = ["ReferenceRunDir"]
 conditional_dict["S3Upload"] = [
@@ -117,11 +108,14 @@ conditional_dict["S3Upload"] = [
 conditional_dict["OptimizeBCs"] = ["PerturbValueBCs", "PriorErrorBCs"]
 conditional_dict["LognormalErrors"] = ["PriorErrorBufferElements"]
 conditional_dict["OptimizeOH"] = ["PerturbValueOH", "PriorErrorOH"]
+conditional_dict["EnableOSSE"] = ["DoOSSE", "ObsErrorOSSE", "CreateAutomaticScaleFactorFileOSSE"]
+conditional_dict["CreateAutomaticScaleFactorFileOSSE"] = ["EmisPerturbationOSSE"]
+
 
 def raise_error_message(var):
     """
     Description: raise an error message about missing config variable
-    """    
+    """
     message = (
         "Error: Missing input variable: "
         + var
@@ -144,13 +138,7 @@ if __name__ == "__main__":
         elif config[key]:
             config_required = config_required + conditional_dict[key]
 
-    # update required vars based on system
-    if config["isAWS"]:
-        required_vars = config_required + config_required_aws
-    else:
-        required_vars = config_required + config_required_local_cluster
-
-    missing_input_vars = [x for x in required_vars if x not in inputted_config]
+    missing_input_vars = [x for x in config_required if x not in inputted_config]
     for var in missing_input_vars:
         raise_error_message(var)
 

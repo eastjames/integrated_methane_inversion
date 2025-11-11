@@ -19,13 +19,14 @@ source src/utilities/common.sh
 source src/components/setup_component/setup.sh
 source src/components/template_component/template.sh
 source src/components/statevector_component/statevector.sh
-source src/components/prior_component/prior.sh
+source src/components/hemco_prior_emis_component/hemco_prior_emis.sh
 source src/components/preview_component/preview.sh
 source src/components/spinup_component/spinup.sh
 source src/components/jacobian_component/jacobian.sh
 source src/components/inversion_component/inversion.sh
 source src/components/posterior_component/posterior.sh
 source src/components/kalman_component/kalman.sh
+source src/components/osse_component/osse_sim.sh
 
 # trap and exit on errors
 trap 'imi_failed $LINENO' ERR
@@ -71,7 +72,10 @@ conda activate ${CondaEnv}
 # Parsing the config file
 eval $(python src/utilities/parse_yaml.py ${ConfigFile})
 
-if ! "$isAWS"; then
+if [[ -z "$GEOSChemEnv" ]]; then
+    printf "\nWarning: GEOS-Chem environment not specified in config file.\n"
+    printf "GEOS-Chem dependencies are assumed to be preloaded\n"
+else
     # Load environment for compiling and running GEOS-Chem
     if [ ! -f "${GEOSChemEnv}" ]; then
         printf "\nGEOS-Chem environment file ${GEOSChemEnv} does not exist!"
@@ -129,7 +133,7 @@ fi
 # Path to inversion setup
 InversionPath=$(pwd -P)
 ConfigPath=${InversionPath}/${ConfigFile}
-export ConfigFileForInversion=${ConfigFile}
+#export ConfigFileForInversion=${ConfigFile}
 # add inversion path to python path
 export PYTHONPATH=${PYTHONPATH}:${InversionPath}
 
@@ -138,7 +142,7 @@ mkdir -p -v ${RunDirs}
 
 # Set/Collect information about the GEOS-Chem version, IMI version,
 # and TROPOMI processor version
-GEOSCHEM_VERSION=14.4.1
+GEOSCHEM_VERSION=14.6.2
 IMI_VERSION=$(git describe --tags)
 TROPOMI_PROCESSOR_VERSION=$(grep 'VALID_TROPOMI_PROCESSOR_VERSIONS =' src/utilities/download_TROPOMI.py |
     sed 's/VALID_TROPOMI_PROCESSOR_VERSIONS = //' |
@@ -157,7 +161,8 @@ echo "# TROPOMI/blended processor version(s): ${TROPOMI_PROCESSOR_VERSION}" >>"$
 
 # Download TROPOMI or blended dataset from AWS
 tropomiCache=${RunDirs}/satellite_data
-if "$isAWS"; then
+
+if [[ -z "$DataPathTROPOMI" ]]; then
     mkdir -p -v $tropomiCache
 
     if "$BlendedTROPOMI"; then
@@ -174,7 +179,6 @@ if "$isAWS"; then
     wait
     cat imi_output.tmp >>${InversionPath}/imi_output.log
     rm imi_output.tmp
-
 else
     # use existing tropomi data and create a symlink to it
     if [[ ! -L $tropomiCache ]]; then
@@ -198,6 +202,11 @@ setup_end=$(date +%s)
 ##=======================================================================
 if "$DoSpinup"; then
     run_spinup
+fi
+
+if ("$DoOSSE" && "$EnableOSSE"); then
+    setup_osse
+    run_osse
 fi
 
 ##=======================================================================

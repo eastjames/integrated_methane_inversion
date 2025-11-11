@@ -8,6 +8,7 @@ import re
 import os
 import datetime
 import yaml
+import gc
 from src.inversion_scripts.utils import save_obj
 from src.inversion_scripts.operators.TROPOMI_operator import (
     apply_average_tropomi_operator,
@@ -101,14 +102,14 @@ if __name__ == "__main__":
         gc_cache = f"{workdir}/data_geoschem"
         outputdir = f"{workdir}/data_converted"
         vizdir = f"{workdir}/data_visualization"
-        
-        # for lognormal, we also sample the prior simulation in a 
+
+        # for lognormal, we also sample the prior simulation in a
         # separate call to jacobian.py solely for visualization purposes
         if viz_prior.lower() == "true":
             gc_cache = f"{gc_cache}_prior"
             outputdir = f"{outputdir}_prior"
             vizdir = f"{vizdir}_prior"
-             
+
     else:  # if sampling posterior simulation
         gc_cache = f"{workdir}/data_geoschem_posterior"
         outputdir = f"{workdir}/data_converted_posterior"
@@ -172,7 +173,7 @@ if __name__ == "__main__":
                     "period_i": period_i,
                     "use_water_obs": use_water_obs,
                 },
-                config
+                config,
             )
 
             # we also save out the unaveraged tropomi operator for visualization purposes
@@ -191,9 +192,9 @@ if __name__ == "__main__":
                     "period_i": period_i,
                     "use_water_obs": use_water_obs,
                 },
-                config
+                config,
             )
-            
+
             if output == None:
                 return 0
         else:
@@ -203,6 +204,11 @@ if __name__ == "__main__":
             print("Saving .pkl file")
             save_obj(output, f"{outputdir}/{date}_GCtoTROPOMI.pkl")
             save_obj(viz_output, f"{vizdir}/{date}_GCtoTROPOMI.pkl")
+        
+        #Clean up to reduce memory use
+        del output, viz_output
+        gc.collect()
+
         return 0
 
     results = Parallel(n_jobs=-1)(delayed(process)(filename) for filename in sat_files)

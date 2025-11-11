@@ -2,8 +2,7 @@
 ## Documentation @ https://imi.readthedocs.io/en/latest/getting-started/imi-config-file.html
 
 ## General
-RunName: "Test_IMI_Global"
-isAWS: false
+RunName: "Test_Global_1day"
 UseSlurm: true
 SafeMode: true
 S3Upload: false
@@ -14,9 +13,9 @@ EndDate: 20180502
 SpinupMonths: 1
 
 ## Use blended TROPOMI+GOSAT data (true)? Or use operational TROPOMI data (false)?
-BlendedTROPOMI: false
+BlendedTROPOMI: true
 
-## Use observations over water? Set to false to filter out water observations 
+## Use observations over water? Set to false to filter out water observations
 UseWaterObs: false
 
 ## Is this a regional inversion? Set to false for global inversion
@@ -25,7 +24,7 @@ isRegional: false
 ## Select two character region ID (for using pre-cropped meteorological fields)
 ##   Current options are listed below with ([lat],[lon]) bounds:
 ##     "AF" : Africa ([-37,40], [-20,53])
-##     "AS" : Asia ([-11,55],[60,150]) 
+##     "AS" : Asia ([-11,55],[60,150])
 ##     "EU" : Europe ([33,61],[-30,70])
 ##     "ME" : Middle East ([12,50], [-20,70])
 ##     "NA" : North America ([10,70],[-140,-40])
@@ -69,7 +68,7 @@ ReducedDimensionStateVector: false
 DynamicKFClustering: false
 ClusteringMethod: "kmeans"
 NumberOfElements: 1000
-ForcedNativeResolutionElements: 
+ForcedNativeResolutionElements:
   - [31.5, -104]
 EmissionRateFilter: 2500
 PlumeCountFilter: 50
@@ -87,16 +86,17 @@ ShapeFile: "None"
 ## - PriorErrorBCs is in ppb (not used for global)
 ## - PriorErrorBufferElements is only used if LognormalErrors is true
 LognormalErrors: false
-PriorError: 0.5
-PriorErrorBCs: 10.0
-PriorErrorBufferElements: 0.5
-PriorErrorOH: 0.1
-ObsError: 15
-Gamma: 1.0
+PriorError: [0.5]
+PriorErrorBCs: [10.0]
+PriorErrorBufferElements: [0.5]
+PriorErrorOH: [0.1]
+ObsError: [15]
+Gamma: [1.0]
 PrecomputedJacobian: false
 
 ## Grid
-##   Options are 0.25x0.3125 (GEOSFP only), 0.5x0.625, 2.0x2.5, or 4.0x5.0
+##   Options are 0.125x0.15625 (GEOS-FP only), 0.25x0.3125 (GEOS-FP only),
+##   0.5x0.625, 2.0x2.5, or 4.0x5.0
 Res: "2.0x2.5"
 
 ## Meteorology
@@ -104,7 +104,7 @@ Res: "2.0x2.5"
 Met: "GEOSFP"
 
 ## Setup modules
-##   Turn on/off different steps in setting up the inversion 
+##   Turn on/off different steps in setting up the inversion
 RunSetup: true
 SetupTemplateRundir: true
 SetupSpinupRun: false
@@ -114,7 +114,7 @@ SetupPosteriorRun: false
 
 ## Run modules
 ##   Turn on/off different steps in performing the inversion
-DoPriorEmis: true
+DoHemcoPriorEmis: true
 DoSpinup: false
 DoJacobian: false
 ReDoJacobian: false
@@ -129,6 +129,8 @@ DOFSThreshold: 0
 ## Resource allocation settings for slurm jobs
 RequestedCPUs: 32
 RequestedMemory: 32000
+InversionCPUs: 32
+InversionMemory: 64000
 RequestedTime: "0-24:00"
 SchedulerPartition: "sapphire,huce_cascade,seas_compute,shared"
 
@@ -137,7 +139,7 @@ MaxSimultaneousRuns: -1
 
 ## Number of Jacobians tracers to use for each jacobian simulation
 ##   Specifying a value = 1 will submit a separate jacobian simulation for each
-##   state vector element. Specifying a value > 1 will combine state vector 
+##   state vector element. Specifying a value > 1 will combine state vector
 ##   elements into a single jacobian simulation.
 NumJacobianTracers: 5
 
@@ -150,15 +152,33 @@ NumJacobianTracers: 5
 ## These settings are intended for advanced users who wish to:
 ##   a. modify additional GEOS-Chem options, or
 ##   b. run the IMI on a local cluster.
+##   c. do an Observing System Simulation Experiment (OSSE)
 ## They can be ignored for any standard cloud application of the IMI.
+
+
+##--------------------------------------------------------------------
+## Settings for Observing System Simulation Experiment (OSSE)
+##--------------------------------------------------------------------
+## If true, the IMI will run on synthetic observations
+EnableOSSE: false
+## Run the simulation with randomly perturbed emissions to generate synthetic observations
+DoOSSE: false
+## Perturbation to apply to the prior emissions 
+EmisPerturbationOSSE: 0.5
+## Noise added to the synthetic observations
+ObsErrorOSSE: 15
+## Use randomly perturbed scale factor as "true" emissions (true)
+CreateAutomaticScaleFactorFileOSSE: true
+## Path to a custom scale factor file if CreateAutomaticScaleFactorFileOSSE is false
+ScaleFactorFileOSSE: "/path/to/ScaleFactor.nc"
 
 ##--------------------------------------------------------------------
 ## Additional settings for GEOS-Chem simulations
 ##--------------------------------------------------------------------
 
 ## Jacobian settings
-## Note PerturbValue is in 1e-8 kg/m2/s. eg specifying 1 means the 
-## perturbation will be 1e-8 kg/m2/s 
+## Note PerturbValue is in 1e-8 kg/m2/s. eg specifying 1 means the
+## perturbation will be 1e-8 kg/m2/s
 ## PerturbValueOH is a relative scale factor and PerturbValueBCs is in ppb
 PerturbValue: 1.0
 PerturbValueOH: 1.1
@@ -169,9 +189,13 @@ PerturbValueBCs: 10.0
 ## inversions
 HourlyCH4: true
 
+## IMI validation
+## Turn on ObsPack diagnostic in GEOS-Chem?
+DoObsPack: false
+
 ## Turn on planeflight diagnostic in GEOS-Chem?
 ## For use in comparing GEOS-Chem against planeflight data. The path
-## to those data must be specified in input.geos.
+## to those data must be specified in geoschem_config.yml.
 PLANEFLIGHT: false
 
 ## Turn on old observation operators in GEOS-Chem?
@@ -186,13 +210,13 @@ AIRS: false
 ##------------------------------------------------------------------
 
 ## Path for IMI runs and output
-OutputPath: "/n/holyscratch01/jacob_lab/$USER"
+OutputPath: "/n/holylfs06/LABS/jacob_lab2/Lab/$USER"
 
 ## Path to GEOS-Chem input data
-DataPath: "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData"
+DataPath: "/n/holylfs06/LABS/jacob_lab/Everyone/GEOS-CHEM/gcgrid/gcdata/ExtData"
 
 ## Path to TROPOMI Data
-DataPathTROPOMI: "/n/holylfs05/LABS/jacob_lab/imi/ch4/tropomi"
+DataPathTROPOMI: "/n/holylfs05/LABS/jacob_lab/imi/ch4/blended"
 
 ## Conda environment file
 ## See envs/README to create the Conda environment specified below
@@ -209,16 +233,16 @@ RestartDownload: false
 
 ## Path to initial GEOS-Chem restart file + prefix
 ##   ("YYYYMMDD_0000z.nc4" will be appended)
-RestartFilePrefix: "/n/holylfs05/LABS/jacob_lab/imi/ch4/tropomi-boundary-conditions/v2024-06/GEOSChem.BoundaryConditions."
+RestartFilePrefix: "/n/holylfs05/LABS/jacob_lab/imi/ch4/blended-boundary-conditions/v2025-06/GEOSChem.BoundaryConditions."
 
 ## Path to GEOS-Chem boundary condition files (for regional simulations)
 ## BCversion will be appended to the end of this path. ${BCpath}/${BCversion}
-BCpath: "/n/holylfs05/LABS/jacob_lab/imi/ch4/tropomi-boundary-conditions"
-BCversion: "v2024-06"
+BCpath: "/n/holylfs05/LABS/jacob_lab/imi/ch4/blended-boundary-conditions"
+BCversion: "v2025-06"
 
 ## Options to download missing GEOS-Chem input data from AWS S3
 ##   NOTE: Must have AWS CLI enabled
-PriorDryRun: false
+HemcoPriorEmisDryRun: false
 SpinupDryrun: false
 ProductionDryRun: false
 PosteriorDryRun: false

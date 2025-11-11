@@ -121,7 +121,7 @@ run_posterior() {
         if "$KalmanMode"; then
             inv_result_path="${RunDirs}/kf_inversions/period${period_i}/${inversion_result_filename}"
         else
-            inv_result_path="${RunDirs}/inversion/${inversion_result_filename}"
+            inv_result_path="${RunDirs}/inversion/${EnsembleDirName}/${inversion_result_filename}"
         fi
         # set BC optimal delta values
         PerturbBCValues=$(generate_optimized_BC_values $inv_result_path)
@@ -224,7 +224,7 @@ run_posterior() {
     posterior_end=$(date +%s)
 
     # convert vizualization notebooks to html
-    run_notebooks
+    #run_notebooks
 }
 
 # Description: Generates the updated NSEW perturbation to apply to domain edge BCs

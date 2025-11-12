@@ -117,7 +117,8 @@ create_simulation_dir() {
     ln -s ../../GEOSChem_build/gcclassic .
 
     # link to restart file
-    RestartFileFromSpinup=${RunDirs}/spinup_run/Restarts/GEOSChem.Restart.${SpinupEnd}_0000z.nc4
+    #RestartFileFromSpinup=${RunDirs}/spinup_run/Restarts/GEOSChem.Restart.${SpinupEnd}_0000z.nc4
+    RestartFileFromSpinup=${RunDirs}/spinup_run/Restarts/GEOSChem.Restart.${StartDate}_0000z.nc4
     if test -f "$RestartFileFromSpinup" || "$DoSpinup"; then
         RestartFile=$RestartFileFromSpinup
     else

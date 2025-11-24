@@ -191,6 +191,7 @@ def make_perturbation_sf(config, period_number, perturb_value=1e-8):
             )
         )
     else:
+        print(f'{prior_cache = }')
         hemco_emis = get_mean_emissions(start_date, end_date, prior_cache)
         prior_sf = None
 

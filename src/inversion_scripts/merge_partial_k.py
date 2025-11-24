@@ -106,7 +106,7 @@ def merge_partial_k(satdat_dir, lat_bounds, lon_bounds, obs_errs, precomp_K):
             ## dat_ref = load_obj(fi_ref)
             ## K_temp = dat_ref["K"][ind[0]]
         else:
-            #K_temp = obj["K"][ind[0]]
+            K_temp = obj["K"][ind[0]]
             K_list[i] = K_temp
 
         # # append partial Ks to build full jacobian

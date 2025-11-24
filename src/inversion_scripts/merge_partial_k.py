@@ -179,4 +179,4 @@ if __name__ == "__main__":
 
     # always saved out
     os.makedirs(ens_dir, exist_ok = True)
-    np.savez(f'{ens_dir}/so_super.npz', so=so)
+    np.savez(f'{ens_dir}/so_super.npz', **so_dict)

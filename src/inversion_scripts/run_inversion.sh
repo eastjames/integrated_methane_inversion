@@ -23,7 +23,7 @@ trap 'send_error $LINENO' ERR
 printf "\n=== PARSING CONFIG FILE ===\n"
 
 invPath={INVERSION_PATH}
-configFile={CONFIG_FILE}
+configFile=${ConfigFileForInversion}
 
 # Get configuration
 #  This defines $StartDate, $EndDate, $nBufferClusters, $RunName
@@ -195,11 +195,11 @@ if "$LognormalErrors"; then
     printf "DONE -- lognormal_invert.py\n\n"
 else
     posteriorSF="./inversion_result.nc"
-    python_args=(invert.py ${OutputPath}/${RunName}/config_${RunName}.yml $nElements $JacobianDir $posteriorSF $LonMinInvDomain $LonMaxInvDomain $LatMinInvDomain $LatMaxInvDomain $Res $jacobian_sf)
+    python_args=(normal_invert.py ${OutputPath}/${RunName}/config_${RunName}.yml $nElements $JacobianDir $posteriorSF $LonMinInvDomain $LonMaxInvDomain $LatMinInvDomain $LatMaxInvDomain $Res $jacobian_sf)
     
-    printf "Calling invert.py\n"
+    printf "Calling normal_invert.py\n"
     python "${python_args[@]}"; wait
-    printf "DONE -- invert.py\n\n"
+    printf "DONE -- normal_invert.py\n\n"
     #=======================================================================
     # Create gridded posterior scaling factor netcdf file
     #=======================================================================

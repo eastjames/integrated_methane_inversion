@@ -120,18 +120,25 @@ def merge_partial_k(satdat_dir, lat_bounds, lon_bounds, obs_errs, precomp_K):
             obs_error = calc_so(obs_err, obs_GC)
             so_dict[key][i] = obs_error
 
-    K = np.concatenate(K_list, axis=0)
-    geos_prior = np.concatenate(geos_prior_list, axis=0)
-    tropomi = np.concatenate(tropomi_list, axis=0)
+    if not precomp_K:
+        K = np.concatenate(K_list, axis=0)
+
+        geos_prior = np.concatenate(geos_prior_list, axis=0)
+        gc_ch4_prior = np.asmatrix(geos_prior)
+
+        tropomi = np.concatenate(tropomi_list, axis=0)
+        obs_tropomi = np.asmatrix(tropomi)
+
     for k,v in so_dict.items():
         so_dict[k] = np.concatenate(v, axis=0)
 
-    gc_ch4_prior = np.asmatrix(geos_prior)
-    obs_tropomi = np.asmatrix(tropomi)
 
     print('Done merging K')
 
-    return gc_ch4_prior, obs_tropomi, K, so_dict
+    if not precomp_K:
+        return gc_ch4_prior, obs_tropomi, K, so_dict
+    else:
+        return None, None, None, so_dict
 
 
 if __name__ == "__main__":

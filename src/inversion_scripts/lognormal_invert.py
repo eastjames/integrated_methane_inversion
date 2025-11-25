@@ -388,7 +388,7 @@ def lognormal_invert(config, state_vector_filepath, jacobian_sf):
     dataset = dataset.transpose(..., "ensemble")
 
     # save to netcdf file
-    dataset.to_netcdf(f'{ens_dir}/gridded_posterior_ln.nc')
+    #dataset.to_netcdf(f'{ens_dir}/gridded_posterior_ln.nc')
 
     # also calculate the mean of the ensemble as the main result
     #dataset_mean = dataset.mean(dim="ensemble")
@@ -407,7 +407,7 @@ def lognormal_invert(config, state_vector_filepath, jacobian_sf):
     make_gridded_posterior(
         results_save_path.replace(".nc", "_ensemble.nc"),
         state_vector_filepath,
-        "gridded_posterior_ln.nc",
+        f"{ens_dir}/gridded_posterior_ln.nc",
     )
 
 

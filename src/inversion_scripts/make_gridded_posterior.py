@@ -123,9 +123,10 @@ if __name__ == "__main__":
     else:
         ens_dir = 'base_inv'
 
+    posterior_SF_path_ensdir = f'{ens_dir}/{posterior_SF_path}'
     save_path_ens = f'{ens_dir}/{save_path}'
 
-    make_gridded_posterior(posterior_SF_path, state_vector_path, save_path_ens)
+    make_gridded_posterior(posterior_SF_path_ensdir, state_vector_path, save_path_ens)
 
 
 

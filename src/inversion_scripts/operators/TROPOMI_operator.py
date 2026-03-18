@@ -682,6 +682,9 @@ def read_blended(filename):
             sc_raw = blended_data["surface_classification"].values[:].astype("uint8")
             dat["surface_classification"] = (sc_raw & 3).astype(int)
             dat["surface_classification_249"] = (sc_raw & 249).astype(int)
+            dat["surface_classification_0xF9"] = (
+                blended_data["surface_classification"].values[:].astype("uint8") & 0xF9
+            ).astype(int)
             
             dat["chi_square_SWIR"] = blended_data["chi_square_SWIR"].values[:]
 

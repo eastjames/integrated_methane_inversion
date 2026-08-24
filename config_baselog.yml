@@ -2,7 +2,7 @@
 ## Documentation @ https://imi.readthedocs.io/en/latest/getting-started/imi-config-file.html
 
 ## General
-RunName: "S4"
+RunName: "S1"
 isAWS: false
 UseSlurm: true
 SafeMode: false
@@ -240,8 +240,8 @@ RestartDownload: false
 
 ## Path to initial GEOS-Chem restart file + prefix
 ##   ("YYYYMMDD_0000z.nc4" will be appended)
-#RestartFilePrefix: "/n/holylfs05/LABS/jacob_lab/imi/ch4/blended-boundary-conditions/v2025-06/GEOSChem.BoundaryConditions."
-RestartFilePrefix: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/nationaltile/runs/S4/S4/obspack_run/posterior_run/Restarts/GEOSChem.Restart."
+RestartFilePrefix: "/n/holylfs05/LABS/jacob_lab/imi/ch4/blended-boundary-conditions/v2025-06/GEOSChem.BoundaryConditions."
+#RestartFilePrefix: "/n/holylfs05/LABS/jacob_lab/Users/jeast/proj/nationaltile/runs/S4/S4/obspack_run/posterior_run/Restarts/GEOSChem.Restart."
 
 ## Path to GEOS-Chem boundary condition files (for regional simulations)
 ## BCversion will be appended to the end of this path. ${BCpath}/${BCversion}

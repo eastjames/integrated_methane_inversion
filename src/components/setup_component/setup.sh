@@ -100,10 +100,13 @@ setup_imi() {
     # Define path to GEOS-Chem run directory files
     cd "${InversionPath}"
     if [ ! -d "GCClassic" ]; then
-        git clone https://github.com/geoschem/GCClassic.git
+        #git clone https://github.com/geoschem/GCClassic.git
+        git clone git@github.com:eastjames/GCClassic.git
         cd GCClassic
-        git checkout ${GEOSCHEM_VERSION}
-        git submodule update --init --recursive
+        #git checkout ${GEOSCHEM_VERSION}
+        git checkout feature/storage_reduce
+        git submodule update --init --recursive --remote src/GEOS-Chem
+        git submodule update --init --recursive src/HEMCO docs/source/geos-chem-shared-docs src/Cloud-J src/HETP
         cd ..
     else
         cd GCClassic

@@ -4,6 +4,8 @@ import xarray as xr
 import pandas as pd
 from src.inversion_scripts.utils import check_is_OH_element, check_is_BC_element
 
+import sys
+
 
 # common utilities for using different operators
 def read_all_geoschem(all_strdate, gc_cache, n_elements, config, build_jacobian=False):

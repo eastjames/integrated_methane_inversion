@@ -191,11 +191,11 @@ if "$LognormalErrors"; then
 
     # then we run the inversion
     printf "Calling lognormal_invert.py\n"
-    python lognormal_invert.py ${OutputPath}/${RunName}/config_${RunName}.yml $StateVectorFile $jacobian_sf
+    python lognormal_invert.py ${invPath}/${configFile} $StateVectorFile $jacobian_sf
     printf "DONE -- lognormal_invert.py\n\n"
 else
     posteriorSF="./inversion_result.nc"
-    python_args=(normal_invert.py ${OutputPath}/${RunName}/config_${RunName}.yml $nElements $JacobianDir $posteriorSF $LonMinInvDomain $LonMaxInvDomain $LatMinInvDomain $LatMaxInvDomain $Res $jacobian_sf)
+    python_args=(normal_invert.py ${invPath}/${configFile} $nElements $JacobianDir $posteriorSF $LonMinInvDomain $LonMaxInvDomain $LatMinInvDomain $LatMaxInvDomain $Res $jacobian_sf)
     
     printf "Calling normal_invert.py\n"
     python "${python_args[@]}"; wait
